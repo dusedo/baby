@@ -11,7 +11,7 @@ import {
 import {
   TASKS, NG_FOODS, SHOPPING, EMERGENCY_TEMPLATE,
   CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE
-} from './data.js?v=20260427a';
+} from './data.js?v=20260427b';
 
 // ===== Firebase 初期化 =====
 const firebaseConfig = {
@@ -488,13 +488,14 @@ function renderDiary() {
     html += `<div class="empty"><span class="empty-emoji">🌸</span>夫婦の最初の一言を残そう</div>`;
   }
   state.diaryEntries.forEach(e => {
-    const m = MEMBERS[e.author] || { name: e.author, emoji: '👤' };
+    const m = MEMBERS[e.author] || { name: e.author, emoji: '' };
     const w = e.createdAt ? calcWeek(e.createdAt.toDate()) : null;
+    const wkLabel = w ? (w.day > 0 ? `${w.week}週+${w.day}日` : `${w.week}週`) : '';
     html += `
-      <div class="diary-entry">
+      <div class="diary-entry diary-${e.author}">
         <div class="diary-head">
-          <div class="diary-author ${e.author}">${m.emoji} ${m.name}</div>
-          <div class="diary-date">${formatDateLong(e.createdAt)}${w ? ` (${w.week}w${w.day}d)` : ''}</div>
+          <div class="diary-author ${e.author}">${m.name}</div>
+          <div class="diary-date">${formatDateLong(e.createdAt)}${wkLabel ? ` (${wkLabel})` : ''}</div>
         </div>
         <div class="diary-text">${escapeHtml(e.text)}</div>
         <div style="margin-top:8px;display:flex;justify-content:flex-end;">

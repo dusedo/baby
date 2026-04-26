@@ -284,6 +284,15 @@ input.input:focus, textarea.input:focus, select.input:focus {
 .diary-entry {
   background: var(--card); border-radius: 18px; padding: 16px;
   box-shadow: var(--shadow);
+  border-left: 6px solid var(--pink-300);
+}
+.diary-entry.diary-tomoko {
+  background: linear-gradient(135deg, #FFF0F5 0%, #FFE4EC 100%);
+  border-left-color: #FF8FB3;
+}
+.diary-entry.diary-ken {
+  background: linear-gradient(135deg, #F0F7FF 0%, #DCEEFF 100%);
+  border-left-color: #7BB7E8;
 }
 .diary-head {
   display: flex; align-items: center; justify-content: space-between;
