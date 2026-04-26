@@ -84,13 +84,19 @@ async function doLogin() {
   }
 }
 
-onAuthStateChanged(auth, user => {
+let authedUser = null;
+
+onAuthStateChanged(auth, async user => {
+  console.log('[auth] state changed. user:', user ? user.email : 'null');
+  authedUser = user;
   if (user) {
     $('#login-screen').hidden = true;
     if (!state.currentUser) {
       $('#user-select-screen').hidden = false;
+      $('#app').hidden = true;
     } else {
-      showApp();
+      $('#user-select-screen').hidden = true;
+      await showApp();
     }
   } else {
     $('#login-screen').hidden = false;
@@ -103,29 +109,38 @@ onAuthStateChanged(auth, user => {
 
 // ===== ユーザー選択 =====
 $$('.user-select-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
+    if (!authedUser) {
+      alert('セッション切れ。再ログインしてください');
+      $('#user-select-screen').hidden = true;
+      $('#login-screen').hidden = false;
+      return;
+    }
     state.currentUser = btn.dataset.user;
     localStorage.setItem('currentUser', state.currentUser);
     $('#user-select-screen').hidden = true;
-    showApp();
+    await showApp();
   });
 });
 
 // ===== アプリ起動 =====
+let appStarted = false;
 async function showApp() {
+  if (!authedUser) {
+    console.error('[auth] showApp aborted: no authed user');
+    return;
+  }
   $('#app').hidden = false;
   updateHeader();
   updateUserToggle();
   switchTab('tasks');
-  setInterval(updateHeader, 60_000); // 1分毎にカウントダウン更新
-  // 認証トークンが Firestore に伝わるまで待ってから購読開始
+  if (!appStarted) {
+    appStarted = true;
+    setInterval(updateHeader, 60_000);
+  }
   try {
-    if (auth.currentUser) {
-      const token = await auth.currentUser.getIdToken(true);
-      console.log('[auth] token ready, uid:', auth.currentUser.uid, 'email:', auth.currentUser.email);
-    } else {
-      console.warn('[auth] currentUser is null at showApp');
-    }
+    const token = await authedUser.getIdToken(true);
+    console.log('[auth] token ready, uid:', authedUser.uid, 'email:', authedUser.email, 'token len:', token.length);
   } catch (e) {
     console.error('[auth] getIdToken failed:', e);
   }
