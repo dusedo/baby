@@ -10,8 +10,9 @@ import {
 
 import {
   TASKS, NG_FOODS, SHOPPING, EMERGENCY_TEMPLATE,
-  CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE, WEEKLY_COMMENTS
-} from './data.js?v=20260427c';
+  CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE, WEEKLY_COMMENTS,
+  AI_SYSTEM_PROMPT
+} from './data.js?v=20260427d';
 
 // ===== Firebase 初期化 =====
 const firebaseConfig = {
@@ -256,6 +257,16 @@ function subscribeAll() {
     state.emergency = snap.exists() ? snap.data() : {};
     if (state.activeTab === 'more') renderMore();
   }, onErr('emergency')));
+  // AI APIキー (Firestoreから読み込み)
+  state.unsubs.push(onSnapshot(doc(db, 'config', 'ai'), snap => {
+    state.aiApiKey = snap.exists() ? snap.data().claudeApiKey : null;
+  }, onErr('ai-config')));
+  // AIチャット履歴
+  state.unsubs.push(onSnapshot(query(collection(db, 'chat'), orderBy('createdAt', 'asc')), snap => {
+    state.chatMessages = [];
+    snap.forEach(d => state.chatMessages.push({ id: d.id, ...d.data() }));
+    if (state.activeMore === 'chat') renderChatMessages();
+  }, onErr('chat')));
 }
 
 let ruleErrorShown = false;
@@ -567,9 +578,11 @@ function renderMore() {
   let html = `
     <div class="tab-title"><span class="icon">⋯</span>その他</div>
     <div class="more-grid">
+      <button class="more-card" data-more="chat"><span class="icon">🤖</span>AIに質問</button>
       <button class="more-card" data-more="ng"><span class="icon">🍽️</span>NG食品リスト</button>
       <button class="more-card" data-more="emergency"><span class="icon">🆘</span>緊急連絡先</button>
       <button class="more-card" data-more="procedures"><span class="icon">📄</span>手続き一覧</button>
+      <button class="more-card" data-more="ai-settings"><span class="icon">⚙️</span>AI設定</button>
       <button class="more-card" data-more="logout"><span class="icon">🚪</span>ログアウト</button>
     </div>
     <div id="more-content" style="margin-top:20px;"></div>`;
@@ -581,6 +594,7 @@ function renderMore() {
 }
 
 function renderMoreContent(kind) {
+  state.activeMore = kind;
   const out = $('#more-content');
   if (kind === 'ng') {
     let h = `<div class="tab-title"><span class="icon">🍽️</span>妊娠中NG・注意食品</div>`;
@@ -595,6 +609,10 @@ function renderMoreContent(kind) {
     bindTaskCards(out);
   } else if (kind === 'emergency') {
     renderEmergency(out);
+  } else if (kind === 'chat') {
+    renderChat(out);
+  } else if (kind === 'ai-settings') {
+    renderAiSettings(out);
   } else if (kind === 'logout') {
     if (confirm('ログアウトしますか？')) {
       signOut(auth);
@@ -669,6 +687,174 @@ function renderEmergency(out) {
         setDoc(doc(db, 'config', 'emergency'), { ...state.emergency, [label]: v });
       }
     });
+  });
+}
+
+// ===== AI チャット =====
+function renderChat(out) {
+  if (!state.aiApiKey) {
+    out.innerHTML = `
+      <div class="tab-title"><span class="icon">🤖</span>AIに質問</div>
+      <div class="empty">
+        <span class="empty-emoji">🔑</span>
+        APIキーが未設定です。<br>
+        「その他 → ⚙️ AI設定」で Claude APIキーを登録してください。
+      </div>`;
+    return;
+  }
+  out.innerHTML = `
+    <div class="tab-title"><span class="icon">🤖</span>AIに質問</div>
+    <div class="chat-info">
+      💡 妊娠・出産・育児について何でも聞いてください。<br>
+      <small>※ 医学的な判断は必ず医師・助産師に相談してください</small>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-area">
+      <textarea id="chat-input" placeholder="質問を入力…" rows="2"></textarea>
+      <button id="chat-send-btn" class="btn-primary">送信</button>
+    </div>
+    <div style="text-align:right;margin-top:8px;">
+      <button class="btn-danger" id="chat-clear-btn">履歴クリア</button>
+    </div>`;
+  renderChatMessages();
+  $('#chat-send-btn').addEventListener('click', sendChat);
+  $('#chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendChat();
+  });
+  $('#chat-clear-btn').addEventListener('click', clearChat);
+}
+
+function renderChatMessages() {
+  const wrap = $('#chat-messages');
+  if (!wrap) return;
+  if (!state.chatMessages.length) {
+    wrap.innerHTML = `<div class="chat-empty">最初の質問を入力してみてください</div>`;
+    return;
+  }
+  wrap.innerHTML = state.chatMessages.map(m => `
+    <div class="chat-msg chat-msg-${m.role}">
+      <div class="chat-msg-bubble">${escapeHtml(m.content).replace(/\n/g, '<br>')}</div>
+    </div>`).join('');
+  // 最下部にスクロール
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+let chatBusy = false;
+async function sendChat() {
+  if (chatBusy) return;
+  const input = $('#chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!state.aiApiKey) { alert('APIキー未設定'); return; }
+  chatBusy = true;
+  input.value = '';
+  $('#chat-send-btn').textContent = '送信中…';
+  $('#chat-send-btn').disabled = true;
+
+  // ユーザーメッセージを保存
+  await addDoc(collection(db, 'chat'), {
+    role: 'user', content: text, by: state.currentUser, createdAt: serverTimestamp(),
+  });
+
+  // 直近10往復だけ送信 (コスト節約)
+  const recent = state.chatMessages.slice(-20);
+  const apiMessages = recent.map(m => ({ role: m.role, content: m.content }));
+  apiMessages.push({ role: 'user', content: text });
+
+  // 現在の状況を user メッセージの先頭に注入 (system promptはキャッシュ維持のため不変)
+  const { week, day } = calcWeek();
+  const wkLabel = day > 0 ? `${week}週+${day}日` : `${week}週`;
+  const today = new Date().toLocaleDateString('ja-JP');
+  apiMessages[apiMessages.length - 1].content =
+    `[現在: ${today} / 妊娠 ${wkLabel} / 予定日まで${daysUntilDue()}日]\n\n${text}`;
+
+  try {
+    const Anthropic = (await import('https://esm.sh/@anthropic-ai/sdk@0.32.1')).default;
+    const client = new Anthropic({
+      apiKey: state.aiApiKey,
+      dangerouslyAllowBrowser: true,
+    });
+    const stream = await client.messages.stream({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system: [{
+        type: 'text',
+        text: AI_SYSTEM_PROMPT,
+        cache_control: { type: 'ephemeral' },
+      }],
+      messages: apiMessages,
+    });
+    let fullText = '';
+    // 仮メッセージ表示用
+    const tempId = '__streaming__';
+    state.chatMessages.push({ id: tempId, role: 'assistant', content: '考え中…' });
+    renderChatMessages();
+    for await (const chunk of stream) {
+      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        fullText += chunk.delta.text;
+        const idx = state.chatMessages.findIndex(m => m.id === tempId);
+        if (idx >= 0) state.chatMessages[idx].content = fullText;
+        renderChatMessages();
+      }
+    }
+    // 一時を取り除いて Firestore に保存 (購読でリアル更新)
+    state.chatMessages = state.chatMessages.filter(m => m.id !== tempId);
+    await addDoc(collection(db, 'chat'), {
+      role: 'assistant', content: fullText, createdAt: serverTimestamp(),
+    });
+  } catch (e) {
+    console.error('Chat error:', e);
+    state.chatMessages = state.chatMessages.filter(m => m.id !== '__streaming__');
+    await addDoc(collection(db, 'chat'), {
+      role: 'assistant',
+      content: `❌ エラー: ${e.message || '不明'}\nAPIキーや残高を確認してください。`,
+      createdAt: serverTimestamp(),
+    });
+  } finally {
+    chatBusy = false;
+    $('#chat-send-btn').textContent = '送信';
+    $('#chat-send-btn').disabled = false;
+  }
+}
+
+async function clearChat() {
+  if (!confirm('チャット履歴を全て削除しますか？')) return;
+  for (const m of state.chatMessages) {
+    if (m.id && m.id !== '__streaming__') await deleteDoc(doc(db, 'chat', m.id));
+  }
+}
+
+function renderAiSettings(out) {
+  const masked = state.aiApiKey
+    ? state.aiApiKey.slice(0, 12) + '…' + state.aiApiKey.slice(-4)
+    : '未設定';
+  out.innerHTML = `
+    <div class="tab-title"><span class="icon">⚙️</span>AI設定</div>
+    <div class="ai-settings-card">
+      <label>Claude API キー</label>
+      <input class="input" type="password" id="ai-key-input" placeholder="sk-ant-api03-..." autocomplete="new-password">
+      <div class="ai-current">現在: <code>${masked}</code></div>
+      <div class="ai-help">
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Claude API コンソール</a> で発行<br>
+        <strong>必ず</strong> <a href="https://console.anthropic.com/settings/limits" target="_blank" rel="noopener">月額上限を$5</a> 等に設定してください
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="btn-primary" id="ai-key-save">保存</button>
+        <button class="btn-danger" id="ai-key-clear">削除</button>
+      </div>
+    </div>`;
+  $('#ai-key-save').addEventListener('click', async () => {
+    const v = $('#ai-key-input').value.trim();
+    if (!v.startsWith('sk-ant-')) { alert('正しいClaude APIキー形式ではありません'); return; }
+    await setDoc(doc(db, 'config', 'ai'), { claudeApiKey: v });
+    alert('保存しました');
+    renderAiSettings(out);
+  });
+  $('#ai-key-clear').addEventListener('click', async () => {
+    if (!confirm('APIキーを削除しますか？')) return;
+    await deleteDoc(doc(db, 'config', 'ai'));
+    alert('削除しました');
+    renderAiSettings(out);
   });
 }
 

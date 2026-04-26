@@ -428,6 +428,64 @@ input.input:focus, textarea.input:focus, select.input:focus {
 }
 .more-card .icon { font-size: 30px; display: block; margin-bottom: 6px; }
 
+/* ===== AI チャット ===== */
+.chat-info {
+  background: #FFF8EC; border-radius: 14px; padding: 12px 14px;
+  font-size: 13px; line-height: 1.5; margin-bottom: 14px;
+  border-left: 4px solid #F0B070;
+}
+.chat-info small { color: var(--text-soft); }
+.chat-messages {
+  background: var(--card); border-radius: 18px; padding: 14px;
+  height: 50vh; min-height: 300px; max-height: 500px; overflow-y: auto;
+  box-shadow: var(--shadow); margin-bottom: 12px;
+}
+.chat-empty { text-align: center; color: var(--text-soft); font-size: 13px; padding: 30px 10px; }
+.chat-msg { display: flex; margin-bottom: 10px; }
+.chat-msg-user { justify-content: flex-end; }
+.chat-msg-assistant { justify-content: flex-start; }
+.chat-msg-bubble {
+  max-width: 80%; padding: 10px 14px; border-radius: 16px;
+  font-size: 14px; line-height: 1.6; word-break: break-word;
+}
+.chat-msg-user .chat-msg-bubble {
+  background: linear-gradient(135deg, var(--pink-300), var(--pink-400));
+  color: white; border-bottom-right-radius: 4px;
+}
+.chat-msg-assistant .chat-msg-bubble {
+  background: var(--cream); color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.chat-input-area { display: flex; gap: 8px; align-items: flex-end; }
+.chat-input-area textarea {
+  flex: 1; padding: 10px 14px; border-radius: 14px;
+  border: 2px solid var(--border); background: var(--pink-50);
+  font-size: 15px; resize: none; min-height: 50px;
+}
+.chat-input-area textarea:focus { outline: none; border-color: var(--pink-400); background: white; }
+.chat-input-area .btn-primary { padding: 12px 18px; min-height: 50px; }
+
+/* AI 設定 */
+.ai-settings-card {
+  background: var(--card); border-radius: 18px; padding: 16px;
+  box-shadow: var(--shadow);
+}
+.ai-settings-card label {
+  display: block; font-size: 12px; color: var(--text-soft); margin-bottom: 6px;
+}
+.ai-current {
+  font-size: 12px; color: var(--text-soft); margin-top: 8px;
+}
+.ai-current code {
+  background: var(--pink-50); padding: 2px 6px; border-radius: 6px;
+  font-size: 11px; color: var(--text);
+}
+.ai-help {
+  font-size: 12px; color: var(--text-soft); margin-top: 12px;
+  background: var(--pink-50); padding: 10px; border-radius: 10px; line-height: 1.6;
+}
+.ai-help a { color: var(--pink-500); text-decoration: underline; }
+
 /* ===== 緊急連絡先 ===== */
 .emergency-list { display: flex; flex-direction: column; gap: 8px; }
 .emergency-item {
