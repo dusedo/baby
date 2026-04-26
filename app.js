@@ -557,19 +557,8 @@ function downloadDiaryCsv() {
 // ===== その他 (NG食品・緊急連絡先・手続き・夫タスク・ログアウト) =====
 function renderMore() {
   const root = $('#main-content');
-  const me = MEMBERS[state.currentUser] || { name: '?', emoji: '👤' };
   let html = `
     <div class="tab-title"><span class="icon">⋯</span>その他</div>
-    <div class="user-switch-card">
-      <div class="user-switch-info">
-        <div class="user-switch-emoji">${me.emoji}</div>
-        <div>
-          <div class="user-switch-label">この端末で記録中</div>
-          <div class="user-switch-name">${me.name}</div>
-        </div>
-      </div>
-      <button class="btn-secondary" id="switch-user-btn">切替</button>
-    </div>
     <div class="more-grid">
       <button class="more-card" data-more="ng"><span class="icon">🍽️</span>NG食品リスト</button>
       <button class="more-card" data-more="emergency"><span class="icon">🆘</span>緊急連絡先</button>
@@ -582,7 +571,6 @@ function renderMore() {
   root.querySelectorAll('[data-more]').forEach(btn => {
     btn.addEventListener('click', () => renderMoreContent(btn.dataset.more));
   });
-  $('#switch-user-btn')?.addEventListener('click', switchUser);
 }
 
 function renderMoreContent(kind) {
