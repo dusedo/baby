@@ -10,8 +10,8 @@ import {
 
 import {
   TASKS, NG_FOODS, SHOPPING, EMERGENCY_TEMPLATE,
-  CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE
-} from './data.js?v=20260427b';
+  CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE, WEEKLY_COMMENTS
+} from './data.js?v=20260427c';
 
 // ===== Firebase 初期化 =====
 const firebaseConfig = {
@@ -186,6 +186,12 @@ function updateHeader() {
   // 予定日表示
   const due = new Date(DUE_DATE);
   $('#due-date-label').textContent = `${due.getFullYear()}/${due.getMonth()+1}/${due.getDate()}`;
+  // 今週の一言
+  const comment = WEEKLY_COMMENTS[week] || WEEKLY_COMMENTS[Math.max(4, Math.min(42, week))] || '';
+  const wkLbl = $('#weekly-comment-week');
+  const txtEl = $('#weekly-comment-text');
+  if (wkLbl) wkLbl.textContent = `${week}週の一言`;
+  if (txtEl) txtEl.textContent = comment || '今週も一日一日を大切に。';
   // ダッシュボード
   let phase = '初期';
   if (week >= 36) phase = '出産前';

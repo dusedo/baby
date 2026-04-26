@@ -131,6 +131,20 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .dash-value { font-size: 16px; font-weight: 700; color: var(--pink-500); }
 .dash-value small { font-size: 12px; color: var(--text-soft); font-weight: 400; }
 
+/* ===== 今週の一言カード ===== */
+.weekly-comment {
+  margin: 4px 14px 0;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #FFF8EC 0%, #FFEFD8 100%);
+  border-radius: 16px;
+  border-left: 5px solid #F0B070;
+  box-shadow: var(--shadow);
+}
+.weekly-comment-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.weekly-comment-emoji { font-size: 22px; }
+.weekly-comment-week { font-size: 13px; font-weight: 700; color: #B87A30; }
+.weekly-comment-text { font-size: 14px; line-height: 1.6; color: var(--text); }
+
 /* ===== メイン ===== */
 .main-content { padding: 8px 14px 20px; }
 
