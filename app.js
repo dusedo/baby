@@ -11,8 +11,8 @@ import {
 import {
   TASKS, NG_FOODS, SHOPPING, EMERGENCY_TEMPLATE,
   CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE, WEEKLY_COMMENTS,
-  AI_SYSTEM_PROMPT
-} from './data.js?v=20260427d';
+  AI_SYSTEM_PROMPT, FAQ
+} from './data.js?v=20260427g';
 
 // ===== Firebase 初期化 =====
 const firebaseConfig = {
@@ -292,7 +292,14 @@ $$('.nav-btn').forEach(btn => {
 function switchTab(tab) {
   state.activeTab = tab;
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  const renderers = { tasks: renderTasks, health: renderHealth, shopping: renderShopping, diary: renderDiary, more: renderMore };
+  const renderers = {
+    tasks: renderTasks,
+    ai: () => renderChat($('#main-content')),
+    health: renderHealth,
+    shopping: renderShopping,
+    diary: renderDiary,
+    more: renderMore,
+  };
   (renderers[tab] || renderTasks)();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -342,9 +349,7 @@ function renderTasks() {
               ${t.week ? `<span class="task-tag">${t.week}週</span>` : ''}
               ${calLabel ? `<span class="task-tag tag-cal">📅 ${calLabel}</span>` : ''}
               <span class="task-tag">${CAT_ICONS[t.cat] || ''} ${t.cat}</span>
-              <span class="task-tag who-${t.who}">${
-                t.who === 'tomoko' ? '🤰 Tomoko' : t.who === 'ken' ? '👨 Ken' : '👫 二人で'
-              }</span>
+              ${t.who === 'tomoko' ? '' : `<span class="task-tag who-${t.who}">${t.who === 'ken' ? '👨 Ken' : '👫 二人で'}</span>`}
             </div>
             ${t.tip ? `<div class="task-tip">💡 ${escapeHtml(t.tip)}</div>` : ''}
             ${st.done && doneByName ? `<div class="task-done-by">✓ ${doneByName}が完了 (${formatDate(st.doneAt)})</div>` : ''}
@@ -586,6 +591,7 @@ function renderMore() {
     <div class="more-grid">
       <button class="more-card" data-more="chat"><span class="icon">🤖</span>AIに質問</button>
       <button class="more-card" data-more="bookmarks"><span class="icon">📌</span>保存した回答</button>
+      <button class="more-card" data-more="faq"><span class="icon">📚</span>よくある不安</button>
       <button class="more-card" data-more="ng"><span class="icon">🍽️</span>NG食品リスト</button>
       <button class="more-card" data-more="emergency"><span class="icon">🆘</span>緊急連絡先</button>
       <button class="more-card" data-more="procedures"><span class="icon">📄</span>手続き一覧</button>
@@ -622,6 +628,8 @@ function renderMoreContent(kind) {
     renderAiSettings(out);
   } else if (kind === 'bookmarks') {
     renderBookmarks(out);
+  } else if (kind === 'faq') {
+    renderFaq(out);
   } else if (kind === 'logout') {
     if (confirm('ログアウトしますか？')) {
       signOut(auth);
@@ -655,7 +663,7 @@ function renderTaskListHtml(tasks, title) {
             ${t.week ? `<span class="task-tag">${t.week}週</span>` : ''}
             ${calLabel ? `<span class="task-tag tag-cal">📅 ${calLabel}</span>` : ''}
             <span class="task-tag">${t.phase}</span>
-            <span class="task-tag who-${t.who}">${t.who === 'tomoko' ? '🤰' : t.who === 'ken' ? '👨' : '👫'}</span>
+            ${t.who === 'tomoko' ? '' : `<span class="task-tag who-${t.who}">${t.who === 'ken' ? '👨' : '👫'}</span>`}
           </div>
           ${t.tip ? `<div class="task-tip">💡 ${escapeHtml(t.tip)}</div>` : ''}
           ${st.done && doneByName ? `<div class="task-done-by">✓ ${doneByName}が完了 (${formatDate(st.doneAt)})</div>` : ''}
@@ -741,7 +749,7 @@ function renderChatMessages() {
     return;
   }
   wrap.innerHTML = state.chatMessages.map((m, idx) => {
-    const text = escapeHtml(m.content).replace(/\n/g, '<br>');
+    const text = renderSimpleMarkdown(m.content);
     const isAssistant = m.role === 'assistant';
     const isStreaming = m.id === '__streaming__';
     return `
@@ -781,6 +789,37 @@ async function bookmarkAnswer(idx) {
   alert('📌 保存しました');
 }
 
+function renderFaq(out) {
+  const phases = ['全て', '初期', '中期', '後期', '出産前', '産後'];
+  state.faqFilter = state.faqFilter || '全て';
+  let html = `<div class="tab-title"><span class="icon">📚</span>よくある不安・質問</div>`;
+  html += `<div class="filter-bar">`;
+  phases.forEach(p => {
+    const active = state.faqFilter === p ? 'active' : '';
+    html += `<button class="filter-chip ${active}" data-faq-phase="${p}">${p}</button>`;
+  });
+  html += `</div>`;
+  const filtered = state.faqFilter === '全て' ? FAQ : FAQ.filter(f => f.phase === state.faqFilter);
+  html += `<div class="bookmark-list">`;
+  filtered.forEach(f => {
+    html += `
+      <details class="bookmark-card">
+        <summary>
+          <div class="bookmark-q">❓ ${escapeHtml(f.q)}</div>
+          <div class="bookmark-meta">
+            <span class="bookmark-tag">${f.phase}</span>
+          </div>
+        </summary>
+        <div class="bookmark-a">${escapeHtml(f.a).replace(/\n/g, '<br>')}</div>
+      </details>`;
+  });
+  html += `</div>`;
+  out.innerHTML = html;
+  out.querySelectorAll('[data-faq-phase]').forEach(b => {
+    b.addEventListener('click', () => { state.faqFilter = b.dataset.faqPhase; renderFaq(out); });
+  });
+}
+
 function renderBookmarks(out) {
   let html = `<div class="tab-title"><span class="icon">📌</span>保存した回答</div>`;
   if (!state.bookmarks || !state.bookmarks.length) {
@@ -811,7 +850,7 @@ function renderBookmarks(out) {
             <span class="bookmark-date">${formatDateLong(b.savedAt)}</span>
           </div>
         </summary>
-        <div class="bookmark-a">${escapeHtml(b.answer).replace(/\n/g, '<br>')}</div>
+        <div class="bookmark-a">${renderSimpleMarkdown(b.answer)}</div>
         <div style="text-align:right;margin-top:10px;">
           <button class="btn-danger" data-del-bm="${b.id}">削除</button>
         </div>
@@ -958,6 +997,25 @@ function showModal(html) {
   $$('[data-close]').forEach(b => b.addEventListener('click', closeModal));
 }
 function closeModal() { $('#modal-overlay').hidden = true; }
+
+// ===== 簡易マークダウンレンダリング =====
+function renderSimpleMarkdown(s) {
+  if (s == null) return '';
+  let txt = String(s);
+  // --- (水平線) を完全削除
+  txt = txt.replace(/^[ \t]*-{3,}[ \t]*$/gm, '');
+  // 連続する空行を1つに
+  txt = txt.replace(/\n{3,}/g, '\n\n');
+  // HTMLエスケープ
+  txt = escapeHtml(txt);
+  // **bold** → <strong>
+  txt = txt.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // 行頭の - を • に置換 (リスト風)
+  txt = txt.replace(/^- /gm, '• ');
+  // 改行を <br>
+  txt = txt.replace(/\n/g, '<br>');
+  return txt;
+}
 
 // ===== HTML エスケープ =====
 function escapeHtml(s) {

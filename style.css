@@ -349,7 +349,7 @@ input.input:focus, textarea.input:focus, select.input:focus {
 /* ===== ボトムナビ (スマホ最適化・特大タッチターゲット) ===== */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   background: white;
   border-top: 2px solid var(--pink-100);
   box-shadow: 0 -6px 24px rgba(255, 143, 179, 0.18);
@@ -380,9 +380,9 @@ input.input:focus, textarea.input:focus, select.input:focus {
 .app { padding-bottom: 110px; }
 
 /* iPhone 等狭い画面 (~375px以下) */
-@media (max-width: 380px) {
-  .nav-btn { font-size: 12px; padding-left: 0; padding-right: 0; }
-  .nav-btn .nav-icon { font-size: 28px; }
+@media (max-width: 420px) {
+  .nav-btn { font-size: 11px; padding-left: 0; padding-right: 0; gap: 4px; }
+  .nav-btn .nav-icon { font-size: 24px; }
 }
 
 /* ===== CSV ダウンロードボタン ===== */
