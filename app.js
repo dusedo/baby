@@ -150,7 +150,10 @@ async function showApp() {
 function updateHeader() {
   $('#days-left').textContent = daysUntilDue();
   const { week, day } = calcWeek();
-  $('#current-week').textContent = `${week}w${day}d`;
+  $('#current-week').textContent = day > 0 ? `${week}週+${day}日` : `${week}週`;
+  // 予定日表示
+  const due = new Date(DUE_DATE);
+  $('#due-date-label').textContent = `${due.getFullYear()}/${due.getMonth()+1}/${due.getDate()}`;
   // ダッシュボード
   let phase = '初期';
   if (week >= 36) phase = '出産前';
@@ -374,11 +377,12 @@ function renderHealth() {
   }
   state.healthRecords.forEach(r => {
     const w = calcWeek(new Date(r.date));
+    const wkLabel = w.day > 0 ? `${w.week}週+${w.day}日` : `${w.week}週`;
     html += `
       <div class="health-card" data-id="${r.id}">
         <div class="health-card-head">
           <div class="health-date">${formatDateLong(r.date)}</div>
-          <div class="health-week">${w.week}w${w.day}d</div>
+          <div class="health-week">${wkLabel}</div>
         </div>
         <div class="health-grid">
           <div class="health-item"><label>体重</label><span>${r.weight || '-'} kg</span></div>
@@ -439,7 +443,10 @@ function openHealthModal() {
 function renderDiary() {
   const root = $('#main-content');
   let html = `
-    <div class="tab-title"><span class="icon">📝</span>共有日記</div>
+    <div class="tab-title">
+      <span class="icon">📝</span>共有日記
+      <button class="btn-csv" id="diary-csv-btn" title="CSVダウンロード">📥 CSV</button>
+    </div>
     <div class="diary-input-card">
       <textarea id="diary-input" placeholder="今日の体調や思ったこと…"></textarea>
       <div style="display:flex;justify-content:flex-end;margin-top:8px;">
@@ -482,6 +489,39 @@ function renderDiary() {
       }
     });
   });
+  $('#diary-csv-btn').addEventListener('click', downloadDiaryCsv);
+}
+
+function downloadDiaryCsv() {
+  if (!state.diaryEntries.length) {
+    alert('日記がまだありません');
+    return;
+  }
+  // 古い順 (時系列) でDL
+  const sorted = [...state.diaryEntries].sort((a, b) => {
+    const ta = a.createdAt?.toMillis?.() || 0;
+    const tb = b.createdAt?.toMillis?.() || 0;
+    return ta - tb;
+  });
+  const escape = s => `"${String(s ?? '').replace(/"/g, '""').replace(/\r?\n/g, '\\n')}"`;
+  const rows = [['日付', '時刻', '週数', '投稿者', '本文']];
+  sorted.forEach(e => {
+    const dt = e.createdAt?.toDate?.() || new Date();
+    const date = `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
+    const time = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const w = calcWeek(dt);
+    const wkLabel = w.day > 0 ? `${w.week}週+${w.day}日` : `${w.week}週`;
+    const author = MEMBERS[e.author]?.name || e.author;
+    rows.push([date, time, wkLabel, author, e.text]);
+  });
+  const csv = '\uFEFF' + rows.map(r => r.map(escape).join(',')).join('\r\n'); // BOM付きでExcel文字化け対策
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().slice(0, 10);
+  a.href = url; a.download = `baby-diary-${today}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ===== その他 (NG食品・緊急連絡先・手続き・夫タスク・ログアウト) =====

@@ -18,9 +18,7 @@ export const TASKS = [
   { id: 'i03', phase: '初期', cat: '医療',   week: '8-10',  title: '分娩する産院を決める', who: 'both', tip: '人気産院は早く埋まる。里帰り検討中なら両方候補を。' },
   { id: 'i04', phase: '初期', cat: '医療',   week: '10-12', title: '産院に分娩予約', who: 'tomoko' },
   { id: 'i05', phase: '初期', cat: '手続き', week: '8-12',  title: '母子健康手帳を取得', who: 'tomoko', tip: '産院でもらう「妊娠届出書」を市区町村窓口へ。妊婦健診助成券もここで。' },
-  { id: 'i06', phase: '初期', cat: '生活',   week: '5-15',  title: '葉酸サプリ摂取開始 (1日400μg)', who: 'tomoko', tip: '神経管閉鎖障害予防。妊娠初期が特に重要。' },
-  { id: 'i07', phase: '初期', cat: '生活',   week: '5-40',  title: '禁酒・禁煙・受動喫煙回避', who: 'both', tip: 'Kenも家ではタバコNG。受動喫煙も影響あり。' },
-  { id: 'i08', phase: '初期', cat: '生活',   week: '5-40',  title: 'カフェインを控える (1日200mg以下)', who: 'tomoko', tip: 'コーヒー2杯まで目安。デカフェに切替おすすめ。' },
+  { id: 'i_prenatal', phase: '初期', cat: '医療', week: '8-12', title: '出生前診断を検討 (NIPT・クアトロ等)', who: 'both', tip: 'NIPTは10週から可能。希望なら早めに調べる。費用15-20万円。' },
   { id: 'i09', phase: '初期', cat: '医療',   week: '8-12',  title: '風疹抗体検査 (夫婦両方)', who: 'both', tip: 'Tomokoが抗体不足ならKenが予防接種。妊娠中は本人接種不可。' },
   { id: 'i10', phase: '初期', cat: '医療',   week: '10-15', title: '歯科検診・治療 (安定期前推奨)', who: 'tomoko', tip: '妊娠中は歯周病リスク↑。早産・低体重児リスクとも関連。' },
   { id: 'i11', phase: '初期', cat: '生活',   week: '5-15',  title: 'つわり対策グッズ準備', who: 'both', tip: '炭酸水・氷・梅干し・つわりキャンディ・洗面器。' },
@@ -32,7 +30,6 @@ export const TASKS = [
   // ========== 妊娠中期 (16-27週) - 安定期 ==========
   { id: 'm01', phase: '中期', cat: 'イベント', week: '16',    title: '戌の日の安産祈願', who: 'both', tip: '5ヶ月目最初の戌の日。腹帯持参。水天宮等。' },
   { id: 'm02', phase: '中期', cat: '医療',     week: '16-20', title: '性別判明 (希望時)', who: 'tomoko' },
-  { id: 'm03', phase: '中期', cat: '医療',     week: '15-18', title: '出生前診断検討 (NIPT等)', who: 'both', tip: 'NIPTは10週から可能。希望なら早めに調べる。' },
   { id: 'm04', phase: '中期', cat: '生活',     week: '16-20', title: 'マタニティウェア・下着購入', who: 'tomoko', tip: 'ユニクロ・無印・西松屋がコスパ◎。' },
   { id: 'm05', phase: '中期', cat: '生活',     week: '20-24', title: 'マタニティブラ・腹帯購入', who: 'tomoko' },
   { id: 'm06', phase: '中期', cat: '学習',     week: '20-28', title: '両親学級・母親学級に参加', who: 'both', tip: '自治体主催は無料。沐浴体験等。' },

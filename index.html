@@ -17,7 +17,7 @@
   <div class="login-card">
     <div class="login-emoji">🌸</div>
     <h1>Baby Roadmap</h1>
-    <p class="login-sub">予定日 2027/1/2 まで</p>
+    <p class="login-sub">夫婦の妊娠記録</p>
     <input type="password" id="password-input" placeholder="パスワード" autocomplete="current-password">
     <button id="login-btn">ログイン</button>
     <p id="login-error" class="login-error"></p>
@@ -46,13 +46,12 @@
       <span class="header-emoji">🌸</span>
       <div class="countdown">
         <div class="countdown-main"><span id="days-left">--</span><span class="unit">日</span></div>
-        <div class="countdown-sub">予定日まで</div>
+        <div class="countdown-sub">予定日 <span id="due-date-label">2027/1/2</span></div>
       </div>
     </div>
     <div class="header-right">
       <div class="week-badge">
         <span id="current-week">--</span>
-        <small>週</small>
       </div>
       <button id="user-toggle" class="user-toggle" title="ユーザー切替"></button>
     </div>
@@ -84,14 +83,14 @@
     <button class="nav-btn active" data-tab="tasks">
       <span class="nav-icon">✅</span><span class="nav-label">やること</span>
     </button>
+    <button class="nav-btn" data-tab="diary">
+      <span class="nav-icon">📝</span><span class="nav-label">日記</span>
+    </button>
     <button class="nav-btn" data-tab="health">
       <span class="nav-icon">🏥</span><span class="nav-label">健診</span>
     </button>
     <button class="nav-btn" data-tab="shopping">
       <span class="nav-icon">🛒</span><span class="nav-label">買い物</span>
-    </button>
-    <button class="nav-btn" data-tab="diary">
-      <span class="nav-icon">📝</span><span class="nav-label">日記</span>
     </button>
     <button class="nav-btn" data-tab="more">
       <span class="nav-icon">⋯</span><span class="nav-label">その他</span>

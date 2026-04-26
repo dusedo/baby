@@ -83,35 +83,38 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 
 /* ===== アプリ全体 ===== */
 .app {
-  max-width: 720px; margin: 0 auto; padding-bottom: 80px;
+  max-width: 720px; margin: 0 auto;
   min-height: 100vh;
 }
 
 /* ===== ヘッダー ===== */
 .header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 18px 14px;
+  gap: 8px;
+  padding: 18px 16px 16px;
   background: linear-gradient(135deg, #FFE4EC, #FFD0DD);
-  border-radius: 0 0 24px 24px;
+  border-radius: 0 0 28px 28px;
   position: sticky; top: 0; z-index: 50;
   box-shadow: var(--shadow);
 }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.header-emoji { font-size: 28px; }
-.countdown-main { font-size: 26px; font-weight: 700; color: var(--pink-500); line-height: 1; }
-.countdown-main .unit { font-size: 14px; margin-left: 2px; color: var(--text); }
-.countdown-sub { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
-.header-right { display: flex; align-items: center; gap: 10px; }
+.header-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.header-emoji { font-size: 30px; }
+.countdown { min-width: 0; }
+.countdown-main { font-size: 30px; font-weight: 700; color: var(--pink-500); line-height: 1; }
+.countdown-main .unit { font-size: 15px; margin-left: 2px; color: var(--text); }
+.countdown-sub { font-size: 11px; color: var(--text-soft); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .week-badge {
-  background: white; border-radius: 14px; padding: 8px 14px;
+  background: white; border-radius: 14px; padding: 8px 12px;
   text-align: center; box-shadow: var(--shadow);
+  min-width: 56px;
 }
-.week-badge span { font-size: 18px; font-weight: 700; color: var(--pink-500); }
-.week-badge small { font-size: 10px; color: var(--text-soft); display: block; }
+.week-badge span { font-size: 14px; font-weight: 700; color: var(--pink-500); white-space: nowrap; }
 .user-toggle {
-  width: 44px; height: 44px; border-radius: 50%;
-  font-size: 22px; background: white; box-shadow: var(--shadow);
+  width: 48px; height: 48px; border-radius: 50%;
+  font-size: 24px; background: white; box-shadow: var(--shadow);
   transition: transform .15s;
+  display: flex; align-items: center; justify-content: center;
 }
 .user-toggle:active { transform: scale(0.92); }
 
@@ -153,27 +156,28 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 
 /* タスクカード */
 .task-card {
-  background: var(--card); border-radius: 18px; padding: 14px;
-  margin-bottom: 8px; box-shadow: var(--shadow);
-  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--card); border-radius: 18px; padding: 16px;
+  margin-bottom: 10px; box-shadow: var(--shadow);
+  display: flex; gap: 14px; align-items: flex-start;
   transition: opacity .2s, transform .15s;
 }
 .task-card.done { opacity: 0.55; }
 .task-card.done .task-title { text-decoration: line-through; }
 .task-checkbox {
-  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
-  border: 2.5px solid var(--pink-300); background: white;
+  flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+  border: 3px solid var(--pink-300); background: white;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; color: white;
+  font-size: 20px; color: white; font-weight: 700;
   transition: all .15s;
+  cursor: pointer;
 }
 .task-card.done .task-checkbox {
   background: linear-gradient(135deg, var(--pink-400), var(--pink-500));
   border-color: var(--pink-500);
 }
 .task-checkbox:active { transform: scale(0.85); }
-.task-body { flex: 1; min-width: 0; }
-.task-title { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.4; }
+.task-body { flex: 1; min-width: 0; padding-top: 4px; }
+.task-title { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.5; }
 .task-meta {
   display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
   font-size: 11px; color: var(--text-soft);
@@ -264,14 +268,15 @@ input.input:focus, textarea.input:focus, select.input:focus {
 }
 .shop-section-title .count { font-size: 11px; color: var(--text-soft); font-weight: 400; }
 .shop-item {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--card); border-radius: 12px; padding: 10px 12px;
-  margin-bottom: 4px; box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card); border-radius: 14px; padding: 14px;
+  margin-bottom: 6px; box-shadow: var(--shadow);
+  min-height: 56px;
 }
 .shop-item.done { opacity: 0.5; }
 .shop-item.done .shop-name { text-decoration: line-through; }
-.shop-item .task-checkbox { width: 22px; height: 22px; font-size: 13px; }
-.shop-name { flex: 1; font-size: 13px; }
+.shop-item .task-checkbox { width: 30px; height: 30px; font-size: 17px; border-width: 2.5px; }
+.shop-name { flex: 1; font-size: 15px; font-weight: 500; }
 
 /* ===== 日記 ===== */
 .diary-list { display: flex; flex-direction: column; gap: 10px; }
@@ -300,24 +305,46 @@ input.input:focus, textarea.input:focus, select.input:focus {
 }
 .diary-input-card textarea:focus { outline: none; }
 
-/* ===== ボトムナビ ===== */
+/* ===== ボトムナビ (スマホ最適化・大型タッチターゲット) ===== */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   display: grid; grid-template-columns: repeat(5, 1fr);
   background: white;
   border-top: 1px solid var(--border);
-  box-shadow: 0 -2px 12px rgba(255, 143, 179, 0.08);
+  box-shadow: 0 -4px 20px rgba(255, 143, 179, 0.15);
   z-index: 40;
   padding-bottom: env(safe-area-inset-bottom);
 }
 .nav-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2px; padding: 8px 4px;
-  color: var(--text-soft); font-size: 10px; font-weight: 500;
+  gap: 6px; padding: 14px 4px 12px;
+  min-height: 72px;
+  color: var(--text-soft); font-size: 13px; font-weight: 700;
+  position: relative;
+  transition: color .15s;
 }
-.nav-btn .nav-icon { font-size: 22px; }
+.nav-btn .nav-icon { font-size: 32px; line-height: 1; transition: transform .2s; }
+.nav-btn .nav-label { letter-spacing: 0.02em; }
+.nav-btn:active { background: var(--pink-50); }
 .nav-btn.active { color: var(--pink-500); }
-.nav-btn.active .nav-icon { transform: scale(1.1); }
+.nav-btn.active .nav-icon { transform: scale(1.18) translateY(-2px); }
+.nav-btn.active::before {
+  content: ''; position: absolute; top: 0; left: 25%; right: 25%; height: 4px;
+  background: linear-gradient(90deg, var(--pink-400), var(--pink-500));
+  border-radius: 0 0 4px 4px;
+}
+
+/* アプリのbody余白をボトムナビ分追加 */
+.app { padding-bottom: 100px; }
+
+/* ===== CSV ダウンロードボタン ===== */
+.btn-csv {
+  margin-left: auto; padding: 6px 12px; border-radius: 12px;
+  background: var(--pink-50); color: var(--pink-500);
+  font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.btn-csv:active { background: var(--pink-100); transform: scale(0.97); }
 
 /* ===== モーダル ===== */
 .modal-overlay {
