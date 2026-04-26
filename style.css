@@ -305,37 +305,44 @@ input.input:focus, textarea.input:focus, select.input:focus {
 }
 .diary-input-card textarea:focus { outline: none; }
 
-/* ===== ボトムナビ (スマホ最適化・大型タッチターゲット) ===== */
+/* ===== ボトムナビ (スマホ最適化・特大タッチターゲット) ===== */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   display: grid; grid-template-columns: repeat(5, 1fr);
   background: white;
-  border-top: 1px solid var(--border);
-  box-shadow: 0 -4px 20px rgba(255, 143, 179, 0.15);
+  border-top: 2px solid var(--pink-100);
+  box-shadow: 0 -6px 24px rgba(255, 143, 179, 0.18);
   z-index: 40;
   padding-bottom: env(safe-area-inset-bottom);
 }
 .nav-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 6px; padding: 14px 4px 12px;
-  min-height: 72px;
+  gap: 6px; padding: 14px 2px 14px;
+  min-height: 78px;
   color: var(--text-soft); font-size: 13px; font-weight: 700;
   position: relative;
   transition: color .15s;
+  white-space: nowrap;
 }
-.nav-btn .nav-icon { font-size: 32px; line-height: 1; transition: transform .2s; }
-.nav-btn .nav-label { letter-spacing: 0.02em; }
+.nav-btn .nav-icon { font-size: 30px; line-height: 1; transition: transform .2s; }
+.nav-btn .nav-label { letter-spacing: 0; line-height: 1; }
 .nav-btn:active { background: var(--pink-50); }
 .nav-btn.active { color: var(--pink-500); }
 .nav-btn.active .nav-icon { transform: scale(1.18) translateY(-2px); }
 .nav-btn.active::before {
-  content: ''; position: absolute; top: 0; left: 25%; right: 25%; height: 4px;
+  content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 4px;
   background: linear-gradient(90deg, var(--pink-400), var(--pink-500));
   border-radius: 0 0 4px 4px;
 }
 
 /* アプリのbody余白をボトムナビ分追加 */
-.app { padding-bottom: 100px; }
+.app { padding-bottom: 110px; }
+
+/* iPhone 等狭い画面 (~375px以下) */
+@media (max-width: 380px) {
+  .nav-btn { font-size: 12px; padding-left: 0; padding-right: 0; }
+  .nav-btn .nav-icon { font-size: 28px; }
+}
 
 /* ===== CSV ダウンロードボタン ===== */
 .btn-csv {

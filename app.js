@@ -533,8 +533,6 @@ function renderMore() {
       <button class="more-card" data-more="ng"><span class="icon">🍽️</span>NG食品リスト</button>
       <button class="more-card" data-more="emergency"><span class="icon">🆘</span>緊急連絡先</button>
       <button class="more-card" data-more="procedures"><span class="icon">📄</span>手続き一覧</button>
-      <button class="more-card" data-more="ken"><span class="icon">👨</span>Kenがやること</button>
-      <button class="more-card" data-more="tomoko"><span class="icon">🤰</span>Tomokoがやること</button>
       <button class="more-card" data-more="logout"><span class="icon">🚪</span>ログアウト</button>
     </div>
     <div id="more-content" style="margin-top:20px;"></div>`;
@@ -557,12 +555,6 @@ function renderMoreContent(kind) {
     out.innerHTML = h;
   } else if (kind === 'procedures') {
     out.innerHTML = renderTaskFilter('手続き', '📄 手続き一覧');
-    bindTaskCards(out);
-  } else if (kind === 'ken') {
-    out.innerHTML = renderTaskByWho('ken', '👨 Kenがやること');
-    bindTaskCards(out);
-  } else if (kind === 'tomoko') {
-    out.innerHTML = renderTaskByWho('tomoko', '🤰 Tomokoがやること');
     bindTaskCards(out);
   } else if (kind === 'emergency') {
     renderEmergency(out);
