@@ -265,13 +265,15 @@ function subscribeAll() {
   state.unsubs.push(onSnapshot(query(collection(db, 'chat'), orderBy('createdAt', 'asc')), snap => {
     state.chatMessages = [];
     snap.forEach(d => state.chatMessages.push({ id: d.id, ...d.data() }));
-    if (state.activeMore === 'chat') renderChatMessages();
+    if (state.activeTab === 'ai' && state.aiSubTab === 'chat') renderChatMessages();
   }, onErr('chat')));
   // ブックマーク
   state.unsubs.push(onSnapshot(query(collection(db, 'bookmarks'), orderBy('savedAt', 'desc')), snap => {
     state.bookmarks = [];
     snap.forEach(d => state.bookmarks.push({ id: d.id, ...d.data() }));
-    if (state.activeMore === 'bookmarks') renderBookmarks($('#more-content'));
+    if (state.activeTab === 'ai' && state.aiSubTab === 'bookmarks') {
+      renderBookmarks($('#ai-content'));
+    }
   }, onErr('bookmarks')));
 }
 
