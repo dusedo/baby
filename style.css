@@ -456,6 +456,44 @@ input.input:focus, textarea.input:focus, select.input:focus {
   background: var(--cream); color: var(--text);
   border-bottom-left-radius: 4px;
 }
+.chat-msg-wrap { display: flex; flex-direction: column; max-width: 85%; }
+.chat-msg-actions { margin-top: 4px; align-self: flex-start; }
+.chat-bookmark-btn {
+  background: var(--pink-50); color: var(--pink-500);
+  font-size: 11px; padding: 4px 10px; border-radius: 8px;
+  font-weight: 700;
+}
+.chat-bookmark-btn:active { background: var(--pink-100); transform: scale(0.95); }
+
+/* ===== ブックマーク一覧 ===== */
+.bookmark-list { display: flex; flex-direction: column; gap: 8px; }
+.bookmark-card {
+  background: var(--card); border-radius: 16px; padding: 0;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.bookmark-card summary {
+  padding: 14px 16px; cursor: pointer; list-style: none;
+  user-select: none;
+}
+.bookmark-card summary::-webkit-details-marker { display: none; }
+.bookmark-card summary::before {
+  content: '▶'; display: inline-block; margin-right: 8px;
+  font-size: 10px; color: var(--pink-400); transition: transform .15s;
+}
+.bookmark-card[open] summary::before { transform: rotate(90deg); }
+.bookmark-q { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.5; }
+.bookmark-meta { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.bookmark-tag {
+  background: linear-gradient(135deg, #FFE4EC, #FFD0DD);
+  color: #C0648D; font-size: 11px; padding: 2px 8px; border-radius: 8px; font-weight: 700;
+}
+.bookmark-date { font-size: 11px; color: var(--text-soft); }
+.bookmark-a {
+  padding: 12px 16px 14px; background: var(--cream);
+  font-size: 14px; line-height: 1.7; color: var(--text);
+  border-top: 1px solid var(--border);
+  word-break: break-word;
+}
 .chat-input-area { display: flex; gap: 8px; align-items: flex-end; }
 .chat-input-area textarea {
   flex: 1; padding: 10px 14px; border-radius: 14px;

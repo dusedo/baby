@@ -267,6 +267,12 @@ function subscribeAll() {
     snap.forEach(d => state.chatMessages.push({ id: d.id, ...d.data() }));
     if (state.activeMore === 'chat') renderChatMessages();
   }, onErr('chat')));
+  // ブックマーク
+  state.unsubs.push(onSnapshot(query(collection(db, 'bookmarks'), orderBy('savedAt', 'desc')), snap => {
+    state.bookmarks = [];
+    snap.forEach(d => state.bookmarks.push({ id: d.id, ...d.data() }));
+    if (state.activeMore === 'bookmarks') renderBookmarks($('#more-content'));
+  }, onErr('bookmarks')));
 }
 
 let ruleErrorShown = false;
@@ -579,6 +585,7 @@ function renderMore() {
     <div class="tab-title"><span class="icon">⋯</span>その他</div>
     <div class="more-grid">
       <button class="more-card" data-more="chat"><span class="icon">🤖</span>AIに質問</button>
+      <button class="more-card" data-more="bookmarks"><span class="icon">📌</span>保存した回答</button>
       <button class="more-card" data-more="ng"><span class="icon">🍽️</span>NG食品リスト</button>
       <button class="more-card" data-more="emergency"><span class="icon">🆘</span>緊急連絡先</button>
       <button class="more-card" data-more="procedures"><span class="icon">📄</span>手続き一覧</button>
@@ -613,6 +620,8 @@ function renderMoreContent(kind) {
     renderChat(out);
   } else if (kind === 'ai-settings') {
     renderAiSettings(out);
+  } else if (kind === 'bookmarks') {
+    renderBookmarks(out);
   } else if (kind === 'logout') {
     if (confirm('ログアウトしますか？')) {
       signOut(auth);
@@ -731,12 +740,95 @@ function renderChatMessages() {
     wrap.innerHTML = `<div class="chat-empty">最初の質問を入力してみてください</div>`;
     return;
   }
-  wrap.innerHTML = state.chatMessages.map(m => `
-    <div class="chat-msg chat-msg-${m.role}">
-      <div class="chat-msg-bubble">${escapeHtml(m.content).replace(/\n/g, '<br>')}</div>
-    </div>`).join('');
-  // 最下部にスクロール
+  wrap.innerHTML = state.chatMessages.map((m, idx) => {
+    const text = escapeHtml(m.content).replace(/\n/g, '<br>');
+    const isAssistant = m.role === 'assistant';
+    const isStreaming = m.id === '__streaming__';
+    return `
+      <div class="chat-msg chat-msg-${m.role}">
+        <div class="chat-msg-wrap">
+          <div class="chat-msg-bubble">${text}</div>
+          ${isAssistant && !isStreaming ? `
+            <div class="chat-msg-actions">
+              <button class="chat-bookmark-btn" data-idx="${idx}" title="この回答を保存">📌 保存</button>
+            </div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
   wrap.scrollTop = wrap.scrollHeight;
+  wrap.querySelectorAll('.chat-bookmark-btn').forEach(b => {
+    b.addEventListener('click', () => bookmarkAnswer(parseInt(b.dataset.idx, 10)));
+  });
+}
+
+async function bookmarkAnswer(idx) {
+  const ans = state.chatMessages[idx];
+  if (!ans || ans.role !== 'assistant') return;
+  // 直前のuser質問を探す
+  let q = '';
+  for (let i = idx - 1; i >= 0; i--) {
+    if (state.chatMessages[i].role === 'user') { q = state.chatMessages[i].content; break; }
+  }
+  // 任意でタグ付け
+  const tag = prompt('タグ (任意・例: つわり、手続き、食事…):', '') || '';
+  await addDoc(collection(db, 'bookmarks'), {
+    question: q,
+    answer: ans.content,
+    tag: tag.trim(),
+    savedBy: state.currentUser,
+    savedAt: serverTimestamp(),
+  });
+  alert('📌 保存しました');
+}
+
+function renderBookmarks(out) {
+  let html = `<div class="tab-title"><span class="icon">📌</span>保存した回答</div>`;
+  if (!state.bookmarks || !state.bookmarks.length) {
+    html += `<div class="empty"><span class="empty-emoji">📭</span>まだ保存した回答がありません<br><small>AIチャットの回答下の「📌 保存」ボタンから保存できます</small></div>`;
+    out.innerHTML = html;
+    return;
+  }
+  // タグ一覧
+  const tags = ['全て', ...new Set(state.bookmarks.map(b => b.tag).filter(t => t))];
+  state.bookmarkFilter = state.bookmarkFilter || '全て';
+  html += `<div class="filter-bar">`;
+  tags.forEach(t => {
+    const active = state.bookmarkFilter === t ? 'active' : '';
+    html += `<button class="filter-chip ${active}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`;
+  });
+  html += `</div>`;
+  const filtered = state.bookmarkFilter === '全て'
+    ? state.bookmarks
+    : state.bookmarks.filter(b => b.tag === state.bookmarkFilter);
+  html += `<div class="bookmark-list">`;
+  filtered.forEach(b => {
+    html += `
+      <details class="bookmark-card">
+        <summary>
+          <div class="bookmark-q">❓ ${escapeHtml(b.question || '(質問なし)')}</div>
+          <div class="bookmark-meta">
+            ${b.tag ? `<span class="bookmark-tag">${escapeHtml(b.tag)}</span>` : ''}
+            <span class="bookmark-date">${formatDateLong(b.savedAt)}</span>
+          </div>
+        </summary>
+        <div class="bookmark-a">${escapeHtml(b.answer).replace(/\n/g, '<br>')}</div>
+        <div style="text-align:right;margin-top:10px;">
+          <button class="btn-danger" data-del-bm="${b.id}">削除</button>
+        </div>
+      </details>`;
+  });
+  html += `</div>`;
+  out.innerHTML = html;
+  out.querySelectorAll('[data-tag]').forEach(b => {
+    b.addEventListener('click', () => { state.bookmarkFilter = b.dataset.tag; renderBookmarks(out); });
+  });
+  out.querySelectorAll('[data-del-bm]').forEach(b => {
+    b.addEventListener('click', async () => {
+      if (confirm('このブックマークを削除しますか？')) {
+        await deleteDoc(doc(db, 'bookmarks', b.dataset.delBm));
+      }
+    });
+  });
 }
 
 let chatBusy = false;
