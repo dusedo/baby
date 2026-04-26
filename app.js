@@ -203,16 +203,12 @@ function updateDashCounts() {
   $('#dash-done').textContent = done;
 }
 
-// ===== ユーザー切替ボタン =====
-$('#user-toggle').addEventListener('click', () => {
+// ===== ユーザー切替 (その他メニューから) =====
+function updateUserToggle() { /* no-op: header icon removed */ }
+function switchUser() {
   state.currentUser = state.currentUser === 'ken' ? 'tomoko' : 'ken';
   localStorage.setItem('currentUser', state.currentUser);
-  updateUserToggle();
-});
-function updateUserToggle() {
-  const m = MEMBERS[state.currentUser];
-  $('#user-toggle').innerHTML = m.emoji;
-  $('#user-toggle').title = `${m.name}として記録中 (タップで切替)`;
+  if (state.activeTab === 'more') renderMore();
 }
 
 // ===== Firestore 購読 =====
@@ -479,7 +475,7 @@ function renderDiary() {
   let html = `
     <div class="tab-title">
       <span class="icon">📝</span>共有日記
-      <button class="btn-csv" id="diary-csv-btn" title="CSVダウンロード">📥 CSV</button>
+      <button class="btn-csv" id="diary-csv-btn">📥 CSVダウンロード</button>
     </div>
     <div class="diary-input-card">
       <textarea id="diary-input" placeholder="今日の体調や思ったこと…"></textarea>
@@ -561,8 +557,19 @@ function downloadDiaryCsv() {
 // ===== その他 (NG食品・緊急連絡先・手続き・夫タスク・ログアウト) =====
 function renderMore() {
   const root = $('#main-content');
+  const me = MEMBERS[state.currentUser] || { name: '?', emoji: '👤' };
   let html = `
     <div class="tab-title"><span class="icon">⋯</span>その他</div>
+    <div class="user-switch-card">
+      <div class="user-switch-info">
+        <div class="user-switch-emoji">${me.emoji}</div>
+        <div>
+          <div class="user-switch-label">この端末で記録中</div>
+          <div class="user-switch-name">${me.name}</div>
+        </div>
+      </div>
+      <button class="btn-secondary" id="switch-user-btn">切替</button>
+    </div>
     <div class="more-grid">
       <button class="more-card" data-more="ng"><span class="icon">🍽️</span>NG食品リスト</button>
       <button class="more-card" data-more="emergency"><span class="icon">🆘</span>緊急連絡先</button>
@@ -575,6 +582,7 @@ function renderMore() {
   root.querySelectorAll('[data-more]').forEach(btn => {
     btn.addEventListener('click', () => renderMoreContent(btn.dataset.more));
   });
+  $('#switch-user-btn')?.addEventListener('click', switchUser);
 }
 
 function renderMoreContent(kind) {

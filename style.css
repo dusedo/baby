@@ -279,32 +279,49 @@ input.input:focus, textarea.input:focus, select.input:focus {
 .shop-item .task-checkbox { width: 30px; height: 30px; font-size: 17px; border-width: 2.5px; }
 .shop-name { flex: 1; font-size: 15px; font-weight: 500; }
 
-/* ===== 日記 ===== */
-.diary-list { display: flex; flex-direction: column; gap: 10px; }
+/* ===== 日記 (スマホ最適化) ===== */
+.diary-list { display: flex; flex-direction: column; gap: 12px; }
 .diary-entry {
-  background: var(--card); border-radius: 16px; padding: 14px;
+  background: var(--card); border-radius: 18px; padding: 16px;
   box-shadow: var(--shadow);
 }
 .diary-head {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  gap: 8px; flex-wrap: wrap;
 }
-.diary-author { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+.diary-author { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; }
 .diary-author.tomoko { color: #C0648D; }
 .diary-author.ken    { color: #4F87B8; }
-.diary-date { font-size: 11px; color: var(--text-soft); }
-.diary-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
-.diary-week { font-size: 10px; color: var(--text-soft); margin-top: 6px; }
+.diary-date { font-size: 12px; color: var(--text-soft); }
+.diary-text { font-size: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.diary-week { font-size: 11px; color: var(--text-soft); margin-top: 6px; }
 
 .diary-input-card {
-  background: var(--card); border-radius: 16px; padding: 12px;
-  box-shadow: var(--shadow); margin-bottom: 12px;
+  background: var(--card); border-radius: 18px; padding: 16px;
+  box-shadow: var(--shadow); margin-bottom: 14px;
 }
 .diary-input-card textarea {
-  width: 100%; min-height: 80px; resize: vertical;
-  border: none; padding: 6px; background: transparent; color: var(--text);
+  width: 100%; min-height: 110px; resize: vertical;
+  border: none; padding: 4px; background: transparent; color: var(--text);
+  font-size: 16px; line-height: 1.6;
 }
 .diary-input-card textarea:focus { outline: none; }
+.diary-input-card .btn-primary { padding: 14px 28px; font-size: 15px; min-height: 48px; }
+
+/* ===== ユーザー切替カード ===== */
+.user-switch-card {
+  background: linear-gradient(135deg, #FFE4EC, #FFF0F4);
+  border-radius: 18px; padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  box-shadow: var(--shadow);
+}
+.user-switch-info { display: flex; align-items: center; gap: 12px; }
+.user-switch-emoji { font-size: 36px; }
+.user-switch-label { font-size: 11px; color: var(--text-soft); }
+.user-switch-name { font-size: 18px; font-weight: 700; color: var(--pink-500); }
+.user-switch-card .btn-secondary { font-size: 14px; padding: 10px 16px; }
 
 /* ===== ボトムナビ (スマホ最適化・特大タッチターゲット) ===== */
 .bottom-nav {
@@ -347,10 +364,11 @@ input.input:focus, textarea.input:focus, select.input:focus {
 
 /* ===== CSV ダウンロードボタン ===== */
 .btn-csv {
-  margin-left: auto; padding: 6px 12px; border-radius: 12px;
+  margin-left: auto; padding: 8px 14px; border-radius: 12px;
   background: var(--pink-50); color: var(--pink-500);
-  font-size: 12px; font-weight: 700;
+  font-size: 13px; font-weight: 700;
   display: inline-flex; align-items: center; gap: 4px;
+  white-space: nowrap;
 }
 .btn-csv:active { background: var(--pink-100); transform: scale(0.97); }
 
