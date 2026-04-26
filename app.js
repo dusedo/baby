@@ -156,13 +156,17 @@ function updateUserToggle() {
 
 // ===== Firestore 購読 =====
 function subscribeAll() {
+  const onErr = label => err => {
+    console.error(`[${label}] Firestore error:`, err.code, err.message);
+    if (err.code === 'permission-denied') showFirestoreRuleError();
+  };
   // タスク状態
   state.unsubs.push(onSnapshot(collection(db, 'tasks'), snap => {
     state.taskStates = {};
     snap.forEach(doc => state.taskStates[doc.id] = doc.data());
     if (state.activeTab === 'tasks') renderTasks();
     updateDashCounts();
-  }));
+  }, onErr('tasks')));
   // 買い物 (doc id は base64 だが state は key で索引)
   state.unsubs.push(onSnapshot(collection(db, 'shopping'), snap => {
     state.shopStates = {};
@@ -171,24 +175,34 @@ function subscribeAll() {
       if (data.key) state.shopStates[data.key] = { ...data, _docId: d.id };
     });
     if (state.activeTab === 'shopping') renderShopping();
-  }));
+  }, onErr('shopping')));
   // 健診
   state.unsubs.push(onSnapshot(query(collection(db, 'health'), orderBy('date', 'desc')), snap => {
     state.healthRecords = [];
     snap.forEach(doc => state.healthRecords.push({ id: doc.id, ...doc.data() }));
     if (state.activeTab === 'health') renderHealth();
-  }));
+  }, onErr('health')));
   // 日記
   state.unsubs.push(onSnapshot(query(collection(db, 'diary'), orderBy('createdAt', 'desc')), snap => {
     state.diaryEntries = [];
     snap.forEach(doc => state.diaryEntries.push({ id: doc.id, ...doc.data() }));
     if (state.activeTab === 'diary') renderDiary();
-  }));
+  }, onErr('diary')));
   // 緊急連絡先
   state.unsubs.push(onSnapshot(doc(db, 'config', 'emergency'), snap => {
     state.emergency = snap.exists() ? snap.data() : {};
     if (state.activeTab === 'more') renderMore();
-  }));
+  }, onErr('emergency')));
+}
+
+let ruleErrorShown = false;
+function showFirestoreRuleError() {
+  if (ruleErrorShown) return;
+  ruleErrorShown = true;
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#FFE4E4;color:#A03040;padding:12px;text-align:center;font-size:13px;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,.1);';
+  banner.innerHTML = `⚠️ Firestoreルール未公開です。<br>Firebase Console → Firestore → ルール で <code>allow read, write: if request.auth != null;</code> を設定して「公開」してください。`;
+  document.body.appendChild(banner);
 }
 
 // ===== タブ切替 =====
