@@ -428,6 +428,23 @@ input.input:focus, textarea.input:focus, select.input:focus {
 }
 .more-card .icon { font-size: 30px; display: block; margin-bottom: 6px; }
 
+/* ===== AI サブタブ ===== */
+.ai-subtabs {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  margin-bottom: 14px;
+  background: var(--pink-50); border-radius: 14px; padding: 4px;
+}
+.ai-subtab {
+  padding: 10px 4px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; color: var(--text-soft);
+  transition: all .15s;
+}
+.ai-subtab.active {
+  background: white; color: var(--pink-500);
+  box-shadow: var(--shadow);
+}
+.ai-subtab:active { transform: scale(0.97); }
+
 /* ===== AI チャット ===== */
 .chat-info {
   background: #FFF8EC; border-radius: 14px; padding: 12px 14px;
@@ -466,11 +483,22 @@ input.input:focus, textarea.input:focus, select.input:focus {
 .chat-bookmark-btn:active { background: var(--pink-100); transform: scale(0.95); }
 
 /* ===== ブックマーク一覧 ===== */
+.bookmark-hint { font-size: 11px; color: var(--text-soft); text-align: right; margin-bottom: 6px; }
 .bookmark-list { display: flex; flex-direction: column; gap: 8px; }
+.bookmark-card-wrap { position: relative; }
+.bookmark-del-btn {
+  position: absolute; top: 8px; right: 8px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: white; box-shadow: var(--shadow);
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+}
+.bookmark-del-btn:active { background: #FFE4E4; transform: scale(0.9); }
 .bookmark-card {
   background: var(--card); border-radius: 16px; padding: 0;
   box-shadow: var(--shadow); overflow: hidden;
 }
+.bookmark-card summary { padding-right: 50px !important; }
 .bookmark-card summary {
   padding: 14px 16px; cursor: pointer; list-style: none;
   user-select: none;

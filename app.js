@@ -294,7 +294,7 @@ function switchTab(tab) {
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   const renderers = {
     tasks: renderTasks,
-    ai: () => renderChat($('#main-content')),
+    ai: renderAiTab,
     health: renderHealth,
     shopping: renderShopping,
     diary: renderDiary,
@@ -349,7 +349,7 @@ function renderTasks() {
               ${t.week ? `<span class="task-tag">${t.week}週</span>` : ''}
               ${calLabel ? `<span class="task-tag tag-cal">📅 ${calLabel}</span>` : ''}
               <span class="task-tag">${CAT_ICONS[t.cat] || ''} ${t.cat}</span>
-              ${t.who === 'tomoko' ? '' : `<span class="task-tag who-${t.who}">${t.who === 'ken' ? '👨 Ken' : '👫 二人で'}</span>`}
+              <span class="task-tag who-${t.who}">${t.who === 'tomoko' ? 'Tomoko' : t.who === 'ken' ? 'Ken' : '二人で'}</span>
             </div>
             ${t.tip ? `<div class="task-tip">💡 ${escapeHtml(t.tip)}</div>` : ''}
             ${st.done && doneByName ? `<div class="task-done-by">✓ ${doneByName}が完了 (${formatDate(st.doneAt)})</div>` : ''}
@@ -589,13 +589,10 @@ function renderMore() {
   let html = `
     <div class="tab-title"><span class="icon">⋯</span>その他</div>
     <div class="more-grid">
-      <button class="more-card" data-more="chat"><span class="icon">🤖</span>AIに質問</button>
-      <button class="more-card" data-more="bookmarks"><span class="icon">📌</span>保存した回答</button>
       <button class="more-card" data-more="faq"><span class="icon">📚</span>よくある不安</button>
       <button class="more-card" data-more="ng"><span class="icon">🍽️</span>NG食品リスト</button>
       <button class="more-card" data-more="emergency"><span class="icon">🆘</span>緊急連絡先</button>
       <button class="more-card" data-more="procedures"><span class="icon">📄</span>手続き一覧</button>
-      <button class="more-card" data-more="ai-settings"><span class="icon">⚙️</span>AI設定</button>
       <button class="more-card" data-more="logout"><span class="icon">🚪</span>ログアウト</button>
     </div>
     <div id="more-content" style="margin-top:20px;"></div>`;
@@ -663,7 +660,7 @@ function renderTaskListHtml(tasks, title) {
             ${t.week ? `<span class="task-tag">${t.week}週</span>` : ''}
             ${calLabel ? `<span class="task-tag tag-cal">📅 ${calLabel}</span>` : ''}
             <span class="task-tag">${t.phase}</span>
-            ${t.who === 'tomoko' ? '' : `<span class="task-tag who-${t.who}">${t.who === 'ken' ? '👨' : '👫'}</span>`}
+            <span class="task-tag who-${t.who}">${t.who === 'tomoko' ? 'Tomoko' : t.who === 'ken' ? 'Ken' : '二人で'}</span>
           </div>
           ${t.tip ? `<div class="task-tip">💡 ${escapeHtml(t.tip)}</div>` : ''}
           ${st.done && doneByName ? `<div class="task-done-by">✓ ${doneByName}が完了 (${formatDate(st.doneAt)})</div>` : ''}
@@ -707,20 +704,38 @@ function renderEmergency(out) {
   });
 }
 
-// ===== AI チャット =====
+// ===== AI 質問タブ (3サブタブ: チャット / 保存 / 設定) =====
+function renderAiTab() {
+  const root = $('#main-content');
+  state.aiSubTab = state.aiSubTab || 'chat';
+  root.innerHTML = `
+    <div class="tab-title"><span class="icon">🤖</span>AIに質問</div>
+    <div class="ai-subtabs">
+      <button class="ai-subtab ${state.aiSubTab === 'chat' ? 'active' : ''}" data-sub="chat">💬 チャット</button>
+      <button class="ai-subtab ${state.aiSubTab === 'bookmarks' ? 'active' : ''}" data-sub="bookmarks">📌 保存</button>
+      <button class="ai-subtab ${state.aiSubTab === 'settings' ? 'active' : ''}" data-sub="settings">⚙️ 設定</button>
+    </div>
+    <div id="ai-content"></div>`;
+  root.querySelectorAll('.ai-subtab').forEach(b => {
+    b.addEventListener('click', () => { state.aiSubTab = b.dataset.sub; renderAiTab(); });
+  });
+  const out = $('#ai-content');
+  if (state.aiSubTab === 'chat') renderChat(out);
+  else if (state.aiSubTab === 'bookmarks') renderBookmarks(out);
+  else if (state.aiSubTab === 'settings') renderAiSettings(out);
+}
+
 function renderChat(out) {
   if (!state.aiApiKey) {
     out.innerHTML = `
-      <div class="tab-title"><span class="icon">🤖</span>AIに質問</div>
       <div class="empty">
         <span class="empty-emoji">🔑</span>
         APIキーが未設定です。<br>
-        「その他 → ⚙️ AI設定」で Claude APIキーを登録してください。
+        上の「⚙️ 設定」で Claude APIキーを登録してください。
       </div>`;
     return;
   }
   out.innerHTML = `
-    <div class="tab-title"><span class="icon">🤖</span>AIに質問</div>
     <div class="chat-info">
       💡 妊娠・出産・育児について何でも聞いてください。<br>
       <small>※ 医学的な判断は必ず医師・助産師に相談してください</small>
@@ -821,12 +836,13 @@ function renderFaq(out) {
 }
 
 function renderBookmarks(out) {
-  let html = `<div class="tab-title"><span class="icon">📌</span>保存した回答</div>`;
+  let html = '';
   if (!state.bookmarks || !state.bookmarks.length) {
-    html += `<div class="empty"><span class="empty-emoji">📭</span>まだ保存した回答がありません<br><small>AIチャットの回答下の「📌 保存」ボタンから保存できます</small></div>`;
+    html += `<div class="empty"><span class="empty-emoji">📭</span>まだ保存した回答がありません<br><small>「💬 チャット」タブの回答下の「📌 保存」ボタンから保存できます</small></div>`;
     out.innerHTML = html;
     return;
   }
+  html += `<div class="bookmark-hint">タップで開閉、🗑️で削除</div>`;
   // タグ一覧
   const tags = ['全て', ...new Set(state.bookmarks.map(b => b.tag).filter(t => t))];
   state.bookmarkFilter = state.bookmarkFilter || '全て';
@@ -842,19 +858,19 @@ function renderBookmarks(out) {
   html += `<div class="bookmark-list">`;
   filtered.forEach(b => {
     html += `
-      <details class="bookmark-card">
-        <summary>
-          <div class="bookmark-q">❓ ${escapeHtml(b.question || '(質問なし)')}</div>
-          <div class="bookmark-meta">
-            ${b.tag ? `<span class="bookmark-tag">${escapeHtml(b.tag)}</span>` : ''}
-            <span class="bookmark-date">${formatDateLong(b.savedAt)}</span>
-          </div>
-        </summary>
-        <div class="bookmark-a">${renderSimpleMarkdown(b.answer)}</div>
-        <div style="text-align:right;margin-top:10px;">
-          <button class="btn-danger" data-del-bm="${b.id}">削除</button>
-        </div>
-      </details>`;
+      <div class="bookmark-card-wrap">
+        <details class="bookmark-card">
+          <summary>
+            <div class="bookmark-q">❓ ${escapeHtml(b.question || '(質問なし)')}</div>
+            <div class="bookmark-meta">
+              ${b.tag ? `<span class="bookmark-tag">${escapeHtml(b.tag)}</span>` : ''}
+              <span class="bookmark-date">${formatDateLong(b.savedAt)}</span>
+            </div>
+          </summary>
+          <div class="bookmark-a">${renderSimpleMarkdown(b.answer)}</div>
+        </details>
+        <button class="bookmark-del-btn" data-del-bm="${b.id}" title="削除">🗑️</button>
+      </div>`;
   });
   html += `</div>`;
   out.innerHTML = html;
