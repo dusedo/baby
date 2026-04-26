@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#FF8FB3">
+<title>Baby Roadmap 🤰</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ===== ログイン画面 ===== -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-emoji">🌸</div>
+    <h1>Baby Roadmap</h1>
+    <p class="login-sub">予定日 2027/1/2 まで</p>
+    <input type="password" id="password-input" placeholder="パスワード" autocomplete="current-password">
+    <button id="login-btn">ログイン</button>
+    <p id="login-error" class="login-error"></p>
+  </div>
+</div>
+
+<!-- ===== 初回ユーザー選択 (端末ごと) ===== -->
+<div id="user-select-screen" class="user-select-screen" hidden>
+  <div class="login-card">
+    <div class="login-emoji">👋</div>
+    <h2>あなたは？</h2>
+    <p class="login-sub">この端末で誰として記録するか選んでください<br>(後から右上で切替可)</p>
+    <div class="user-select-buttons">
+      <button class="user-select-btn" data-user="tomoko">🤰<br>Tomoko</button>
+      <button class="user-select-btn" data-user="ken">👨<br>Ken</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== メインアプリ ===== -->
+<div id="app" class="app" hidden>
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-left">
+      <span class="header-emoji">🌸</span>
+      <div class="countdown">
+        <div class="countdown-main"><span id="days-left">--</span><span class="unit">日</span></div>
+        <div class="countdown-sub">予定日まで</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="week-badge">
+        <span id="current-week">--</span>
+        <small>週</small>
+      </div>
+      <button id="user-toggle" class="user-toggle" title="ユーザー切替"></button>
+    </div>
+  </header>
+
+  <!-- ダッシュボード (常時表示) -->
+  <section class="dashboard">
+    <div class="dash-card">
+      <div class="dash-label">フェーズ</div>
+      <div class="dash-value" id="dash-phase">--</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label">完了タスク</div>
+      <div class="dash-value"><span id="dash-done">0</span><small>/<span id="dash-total">0</span></small></div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label">産まれる季節</div>
+      <div class="dash-value">❄️ 冬</div>
+    </div>
+  </section>
+
+  <!-- メインコンテンツ (タブで切り替え) -->
+  <main id="main-content" class="main-content">
+    <!-- 各タブのコンテンツがJSでここに描画される -->
+  </main>
+
+  <!-- ボトムナビ (モバイル) -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="tasks">
+      <span class="nav-icon">✅</span><span class="nav-label">やること</span>
+    </button>
+    <button class="nav-btn" data-tab="health">
+      <span class="nav-icon">🏥</span><span class="nav-label">健診</span>
+    </button>
+    <button class="nav-btn" data-tab="shopping">
+      <span class="nav-icon">🛒</span><span class="nav-label">買い物</span>
+    </button>
+    <button class="nav-btn" data-tab="diary">
+      <span class="nav-icon">📝</span><span class="nav-label">日記</span>
+    </button>
+    <button class="nav-btn" data-tab="more">
+      <span class="nav-icon">⋯</span><span class="nav-label">その他</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- ===== モーダル (汎用) ===== -->
+<div id="modal-overlay" class="modal-overlay" hidden>
+  <div class="modal" id="modal-body"></div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
