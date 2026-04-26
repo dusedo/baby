@@ -112,13 +112,24 @@ $$('.user-select-btn').forEach(btn => {
 });
 
 // ===== アプリ起動 =====
-function showApp() {
+async function showApp() {
   $('#app').hidden = false;
   updateHeader();
   updateUserToggle();
-  subscribeAll();
   switchTab('tasks');
   setInterval(updateHeader, 60_000); // 1分毎にカウントダウン更新
+  // 認証トークンが Firestore に伝わるまで待ってから購読開始
+  try {
+    if (auth.currentUser) {
+      const token = await auth.currentUser.getIdToken(true);
+      console.log('[auth] token ready, uid:', auth.currentUser.uid, 'email:', auth.currentUser.email);
+    } else {
+      console.warn('[auth] currentUser is null at showApp');
+    }
+  } catch (e) {
+    console.error('[auth] getIdToken failed:', e);
+  }
+  subscribeAll();
 }
 
 function updateHeader() {
