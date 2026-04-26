@@ -11,7 +11,7 @@ import {
 import {
   TASKS, NG_FOODS, SHOPPING, EMERGENCY_TEMPLATE,
   CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE
-} from './data.js';
+} from './data.js?v=20260427a';
 
 // ===== Firebase 初期化 =====
 const firebaseConfig = {
