@@ -52,6 +52,38 @@ function calcWeek(date = new Date()) {
   const d = diffDays % 7;
   return { week: w, day: d, totalDays: diffDays };
 }
+
+// 週数 → カレンダー期間ラベル ("5月上旬" / "5月上旬〜6月上旬")
+function weekToDate(week) {
+  const d = new Date(LMP_DATE);
+  d.setDate(d.getDate() + week * 7);
+  return d;
+}
+function monthPeriod(date) {
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const period = d <= 10 ? '上旬' : d <= 20 ? '中旬' : '下旬';
+  return `${m}月${period}`;
+}
+function weekRangeToCalLabel(weekStr) {
+  if (!weekStr) return '';
+  const parts = String(weekStr).split('-').map(s => parseInt(s, 10));
+  const start = parts[0];
+  const end = parts[1] != null ? parts[1] : start;
+  if (isNaN(start)) return '';
+  const startDate = weekToDate(start);
+  const endDate = weekToDate(end + 1); endDate.setDate(endDate.getDate() - 1);
+  const span = end - start;
+  // 長期 (8週以上) は月だけ表示
+  if (span >= 8) {
+    const m1 = startDate.getMonth() + 1;
+    const m2 = endDate.getMonth() + 1;
+    return m1 === m2 ? `${m1}月` : `${m1}月〜${m2}月`;
+  }
+  const startLabel = monthPeriod(startDate);
+  const endLabel = monthPeriod(endDate);
+  return startLabel === endLabel ? startLabel : `${startLabel}〜${endLabel}`;
+}
 function daysUntilDue() {
   const due = new Date(DUE_DATE);
   return Math.ceil((due - new Date()) / 86400000);
@@ -281,6 +313,7 @@ function renderTasks() {
       const st = state.taskStates[t.id] || {};
       const doneClass = st.done ? 'done' : '';
       const doneByName = st.doneBy ? MEMBERS[st.doneBy]?.name : '';
+      const calLabel = weekRangeToCalLabel(t.week);
       html += `
         <div class="task-card ${doneClass}" data-id="${t.id}">
           <button class="task-checkbox">${st.done ? '✓' : ''}</button>
@@ -288,6 +321,7 @@ function renderTasks() {
             <div class="task-title">${escapeHtml(t.title)}</div>
             <div class="task-meta">
               ${t.week ? `<span class="task-tag">${t.week}週</span>` : ''}
+              ${calLabel ? `<span class="task-tag tag-cal">📅 ${calLabel}</span>` : ''}
               <span class="task-tag">${CAT_ICONS[t.cat] || ''} ${t.cat}</span>
               <span class="task-tag who-${t.who}">${
                 t.who === 'tomoko' ? '🤰 Tomoko' : t.who === 'ken' ? '👨 Ken' : '👫 二人で'
@@ -581,6 +615,7 @@ function renderTaskListHtml(tasks, title) {
     const st = state.taskStates[t.id] || {};
     const doneClass = st.done ? 'done' : '';
     const doneByName = st.doneBy ? MEMBERS[st.doneBy]?.name : '';
+    const calLabel = weekRangeToCalLabel(t.week);
     html += `
       <div class="task-card ${doneClass}" data-id="${t.id}">
         <button class="task-checkbox">${st.done ? '✓' : ''}</button>
@@ -588,6 +623,7 @@ function renderTaskListHtml(tasks, title) {
           <div class="task-title">${escapeHtml(t.title)}</div>
           <div class="task-meta">
             ${t.week ? `<span class="task-tag">${t.week}週</span>` : ''}
+            ${calLabel ? `<span class="task-tag tag-cal">📅 ${calLabel}</span>` : ''}
             <span class="task-tag">${t.phase}</span>
             <span class="task-tag who-${t.who}">${t.who === 'tomoko' ? '🤰' : t.who === 'ken' ? '👨' : '👫'}</span>
           </div>
