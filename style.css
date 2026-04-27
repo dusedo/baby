@@ -278,10 +278,24 @@ input.input:focus, textarea.input:focus, select.input:focus {
 /* ===== 買い物 ===== */
 .shop-section { margin-bottom: 18px; }
 .shop-section-title {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 14px; font-weight: 700; color: var(--text); margin: 8px 4px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  font-size: 14px; font-weight: 700; color: var(--pink-500);
+  margin: 14px 4px 8px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #FFE4EC, #FFF0F4);
+  border-radius: 12px;
 }
-.shop-section-title .count { font-size: 11px; color: var(--text-soft); font-weight: 400; }
+.shop-section-title .count {
+  font-size: 11px; color: var(--text-soft); font-weight: 600;
+  background: white; padding: 2px 8px; border-radius: 8px;
+}
+.shop-cat-badge {
+  display: inline-block; margin-left: 6px;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 8px;
+  vertical-align: middle;
+}
 .shop-item {
   display: flex; align-items: center; gap: 12px;
   background: var(--card); border-radius: 14px; padding: 14px;

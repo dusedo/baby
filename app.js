@@ -9,10 +9,10 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 import {
-  TASKS, NG_FOODS, SHOPPING, EMERGENCY_TEMPLATE,
+  TASKS, NG_FOODS, SHOPPING, SHOP_CATEGORIES, EMERGENCY_TEMPLATE,
   CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE, WEEKLY_COMMENTS,
   AI_SYSTEM_PROMPT, FAQ, THREAD_CATEGORIES
-} from './data.js?v=20260427j';
+} from './data.js?v=20260427l';
 
 // ===== Firebase 初期化 =====
 const firebaseConfig = {
@@ -385,29 +385,63 @@ async function toggleTask(id) {
   });
 }
 
-// ===== 買い物 =====
+// ===== 買い物 (時期順 + カテゴリバッジ + フィルタ) =====
 function renderShopping() {
   const root = $('#main-content');
+  // カテゴリフィルタ初期値
+  state.shopFilter = state.shopFilter || 'all';
+  const cats = ['all', ...Object.keys(SHOP_CATEGORIES)];
   let html = `<div class="tab-title"><span class="icon">🛒</span>買い物リスト</div>`;
-  for (const [cat, items] of Object.entries(SHOPPING)) {
-    const doneCount = items.filter(item => state.shopStates[`${cat}::${item}`]?.done).length;
+  // フィルタチップ
+  html += `<div class="filter-bar">`;
+  cats.forEach(c => {
+    const active = state.shopFilter === c ? 'active' : '';
+    if (c === 'all') {
+      html += `<button class="filter-chip ${active}" data-shop-cat="all">全て</button>`;
+    } else {
+      const ci = SHOP_CATEGORIES[c];
+      html += `<button class="filter-chip ${active}" data-shop-cat="${c}" style="${active ? '' : `background:${ci.color}33;color:${ci.color}`}">${ci.label}</button>`;
+    }
+  });
+  html += `</div>`;
+
+  // 時期グルーピング
+  const items = state.shopFilter === 'all' ? SHOPPING : SHOPPING.filter(i => i.cat === state.shopFilter);
+  const grouped = {};
+  items.forEach(it => { (grouped[it.week] = grouped[it.week] || []).push(it); });
+  const weeks = Object.keys(grouped).map(Number).sort((a, b) => a - b);
+
+  weeks.forEach(w => {
+    const wkItems = grouped[w];
+    const doneCount = wkItems.filter(i => state.shopStates[`${i.cat}::${i.name}`]?.done).length;
     html += `
       <div class="shop-section">
-        <div class="shop-section-title">${cat} <span class="count">${doneCount}/${items.length}</span></div>`;
-    items.forEach(item => {
-      const key = `${cat}::${item}`;
+        <div class="shop-section-title">
+          <span>📅 ${w}週までに</span>
+          <span class="count">${doneCount}/${wkItems.length}</span>
+        </div>`;
+    wkItems.forEach(item => {
+      const key = `${item.cat}::${item.name}`;
       const st = state.shopStates[key] || {};
       const doneClass = st.done ? 'done' : '';
       const doneByName = st.doneBy ? MEMBERS[st.doneBy]?.name : '';
+      const ci = SHOP_CATEGORIES[item.cat] || { label: item.cat, color: '#ccc' };
       html += `
         <div class="shop-item ${doneClass}" data-key="${key}">
           <button class="task-checkbox">${st.done ? '✓' : ''}</button>
-          <div class="shop-name">${escapeHtml(item)}${doneByName ? ` <span class="task-done-by">✓ ${doneByName}</span>` : ''}</div>
+          <div class="shop-name">
+            ${escapeHtml(item.name)}
+            <span class="shop-cat-badge" style="background:${ci.color}33;color:${ci.color}">${ci.label}</span>
+            ${doneByName ? `<span class="task-done-by">✓ ${doneByName}</span>` : ''}
+          </div>
         </div>`;
     });
     html += `</div>`;
-  }
+  });
   root.innerHTML = html;
+  root.querySelectorAll('[data-shop-cat]').forEach(b => {
+    b.addEventListener('click', () => { state.shopFilter = b.dataset.shopCat; renderShopping(); });
+  });
   root.querySelectorAll('.shop-item').forEach(item => {
     item.querySelector('.task-checkbox').addEventListener('click', () => toggleShop(item.dataset.key));
   });
