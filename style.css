@@ -444,7 +444,7 @@ input.input:focus, textarea.input:focus, select.input:focus {
 
 /* ===== AI サブタブ ===== */
 .ai-subtabs {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
   margin-bottom: 14px;
   background: var(--pink-50); border-radius: 14px; padding: 4px;
 }
