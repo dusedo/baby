@@ -574,8 +574,9 @@ input.input:focus, textarea.input:focus, select.input:focus {
   font-size: 10px; color: var(--pink-400); transition: transform .15s;
 }
 .bookmark-card[open] summary::before { transform: rotate(90deg); }
-.bookmark-q {
-  font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.5;
+.bookmark-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+.bookmark-preview {
+  font-size: 13px; color: var(--text); line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -583,7 +584,6 @@ input.input:focus, textarea.input:focus, select.input:focus {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.bookmark-meta { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
 .bookmark-tag {
   background: linear-gradient(135deg, #FFE4EC, #FFD0DD);
   color: #C0648D; font-size: 11px; padding: 2px 8px; border-radius: 8px; font-weight: 700;

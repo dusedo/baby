@@ -1055,15 +1055,17 @@ function renderBookmarks(out) {
     : state.bookmarks.filter(b => b.tag === state.bookmarkFilter);
   html += `<div class="bookmark-list">`;
   filtered.forEach(b => {
+    // 回答の最初の100文字程度をプレビュー
+    const preview = (b.answer || '').replace(/\n/g, ' ').slice(0, 80);
     html += `
       <div class="bookmark-card-wrap">
         <details class="bookmark-card">
           <summary>
-            <div class="bookmark-q">❓ ${escapeHtml(b.question || '(質問なし)')}</div>
             <div class="bookmark-meta">
               ${b.tag ? `<span class="bookmark-tag">${escapeHtml(b.tag)}</span>` : ''}
               <span class="bookmark-date">${formatDateLong(b.savedAt)}</span>
             </div>
+            <div class="bookmark-preview">${escapeHtml(preview)}${b.answer.length > 80 ? '…' : ''}</div>
           </summary>
           <div class="bookmark-a">${renderSimpleMarkdown(b.answer)}</div>
         </details>
