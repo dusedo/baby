@@ -633,6 +633,7 @@ function renderMore() {
       <button class="more-card" data-more="ng"><span class="icon">🍽️</span>NG食品リスト</button>
       <button class="more-card" data-more="emergency"><span class="icon">🆘</span>緊急連絡先</button>
       <button class="more-card" data-more="procedures"><span class="icon">📄</span>手続き一覧</button>
+      <button class="more-card" data-more="ai-settings"><span class="icon">⚙️</span>AI設定</button>
       <button class="more-card" data-more="logout"><span class="icon">🚪</span>ログアウト</button>
     </div>
     <div id="more-content" style="margin-top:20px;"></div>`;
@@ -753,16 +754,16 @@ function renderAiTab() {
     <div class="ai-subtabs">
       <button class="ai-subtab ${state.aiSubTab === 'chat' ? 'active' : ''}" data-sub="chat">💬 チャット</button>
       <button class="ai-subtab ${state.aiSubTab === 'bookmarks' ? 'active' : ''}" data-sub="bookmarks">📌 保存</button>
-      <button class="ai-subtab ${state.aiSubTab === 'settings' ? 'active' : ''}" data-sub="settings">⚙️ 設定</button>
     </div>
     <div id="ai-content"></div>`;
   root.querySelectorAll('.ai-subtab').forEach(b => {
     b.addEventListener('click', () => { state.aiSubTab = b.dataset.sub; renderAiTab(); });
   });
   const out = $('#ai-content');
+  // 設定はその他タブに移動済み・存在しない時はchatにフォールバック
+  if (state.aiSubTab === 'settings') state.aiSubTab = 'chat';
   if (state.aiSubTab === 'chat') renderChat(out);
   else if (state.aiSubTab === 'bookmarks') renderBookmarks(out);
-  else if (state.aiSubTab === 'settings') renderAiSettings(out);
 }
 
 function renderChat(out) {
