@@ -527,8 +527,9 @@ input.input:focus, textarea.input:focus, select.input:focus {
 .chat-msg-actions { margin-top: 4px; align-self: flex-start; }
 .chat-bookmark-btn {
   background: var(--pink-50); color: var(--pink-500);
-  font-size: 11px; padding: 4px 10px; border-radius: 8px;
-  font-weight: 700;
+  font-size: 14px; padding: 10px 18px; border-radius: 12px;
+  font-weight: 700; min-height: 40px;
+  display: inline-flex; align-items: center; gap: 4px;
 }
 .chat-bookmark-btn:active { background: var(--pink-100); transform: scale(0.95); }
 
