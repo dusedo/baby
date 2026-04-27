@@ -184,6 +184,18 @@ export const WEEKLY_COMMENTS = {
   42: '医師の指示に従って。元気な赤ちゃんに会える日も近い。',
 };
 
+// ===== AI会話スレッドのカテゴリ =====
+export const THREAD_CATEGORIES = [
+  { id: 'health',  label: '体調・症状',     emoji: '🤒', color: '#FFB6C7' },
+  { id: 'food',    label: '食事・栄養',     emoji: '🍽️', color: '#FFD8A8' },
+  { id: 'checkup', label: '健診・医療',     emoji: '🏥', color: '#B8DAF7' },
+  { id: 'prep',    label: '出産準備',       emoji: '🎒', color: '#DCC9F0' },
+  { id: 'admin',   label: '手続き・お金',   emoji: '📄', color: '#A8D8B5' },
+  { id: 'baby',    label: '育児・新生児',   emoji: '👶', color: '#FFC4B5' },
+  { id: 'mental',  label: 'メンタル・不安', emoji: '💆', color: '#E8C4F0' },
+  { id: 'other',   label: 'その他',         emoji: '💬', color: '#D0D0D0' },
+];
+
 // ===== よくある不安・質問 Q&A集 =====
 export const FAQ = [
   // ========== 妊娠初期 ==========

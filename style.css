@@ -445,6 +445,56 @@ input.input:focus, textarea.input:focus, select.input:focus {
 }
 .ai-subtab:active { transform: scale(0.97); }
 
+/* ===== スレッド一覧 ===== */
+.thread-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.thread-card-wrap { position: relative; }
+.thread-card {
+  display: block; width: 100%; text-align: left;
+  background: var(--card); border-radius: 16px; padding: 14px 50px 14px 16px;
+  box-shadow: var(--shadow);
+  border-left: 6px solid var(--pink-300);
+  transition: transform .1s;
+}
+.thread-card:active { transform: scale(0.98); }
+.thread-cat { font-size: 11px; color: var(--text-soft); margin-bottom: 4px; }
+.thread-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.thread-date { font-size: 11px; color: var(--text-soft); margin-top: 6px; }
+.thread-del-btn {
+  position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+  width: 36px; height: 36px; border-radius: 50%;
+  background: white; box-shadow: var(--shadow);
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+}
+.thread-del-btn:active { background: #FFE4E4; transform: translateY(-50%) scale(0.9); }
+
+/* スレッドヘッダー (会話画面) */
+.thread-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.thread-header .btn-secondary { padding: 8px 12px; font-size: 13px; }
+.thread-header-info { flex: 1; min-width: 0; }
+.thread-cat-tag {
+  display: inline-block; padding: 2px 10px; border-radius: 10px;
+  font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+}
+.thread-header-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* カテゴリ選択モーダル */
+.cat-select-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.cat-select-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 8px; border-radius: 14px;
+  font-size: 13px; font-weight: 700; color: var(--text);
+  transition: transform .1s;
+}
+.cat-select-btn:active { transform: scale(0.95); }
+.cat-emoji { font-size: 28px; line-height: 1; }
+
 /* ===== AI チャット ===== */
 .chat-info {
   background: #FFF8EC; border-radius: 14px; padding: 12px 14px;

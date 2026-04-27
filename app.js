@@ -5,14 +5,14 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
 import {
   getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot,
-  query, orderBy, serverTimestamp, addDoc
+  query, orderBy, serverTimestamp, addDoc, getDocs
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 import {
   TASKS, NG_FOODS, SHOPPING, EMERGENCY_TEMPLATE,
   CAT_ICONS, PHASE_INFO, MEMBERS, DUE_DATE, LMP_DATE, WEEKLY_COMMENTS,
-  AI_SYSTEM_PROMPT, FAQ
-} from './data.js?v=20260427g';
+  AI_SYSTEM_PROMPT, FAQ, THREAD_CATEGORIES
+} from './data.js?v=20260427j';
 
 // ===== Firebase 初期化 =====
 const firebaseConfig = {
@@ -178,6 +178,8 @@ async function showApp() {
     console.error('[auth] getIdToken failed:', e);
   }
   subscribeAll();
+  // 旧チャット移行 (threadId なしのドキュメントがあれば食事スレッドへ)
+  migrateOldChat().catch(e => console.error('[migrate]', e));
 }
 
 function updateHeader() {
@@ -261,12 +263,14 @@ function subscribeAll() {
   state.unsubs.push(onSnapshot(doc(db, 'config', 'ai'), snap => {
     state.aiApiKey = snap.exists() ? snap.data().claudeApiKey : null;
   }, onErr('ai-config')));
-  // AIチャット履歴
-  state.unsubs.push(onSnapshot(query(collection(db, 'chat'), orderBy('createdAt', 'asc')), snap => {
-    state.chatMessages = [];
-    snap.forEach(d => state.chatMessages.push({ id: d.id, ...d.data() }));
-    if (state.activeTab === 'ai' && state.aiSubTab === 'chat') renderChatMessages();
-  }, onErr('chat')));
+  // AIスレッド一覧
+  state.unsubs.push(onSnapshot(query(collection(db, 'chat_threads'), orderBy('lastMessageAt', 'desc')), snap => {
+    state.threads = [];
+    snap.forEach(d => state.threads.push({ id: d.id, ...d.data() }));
+    if (state.activeTab === 'ai' && state.aiSubTab === 'chat' && !state.activeThread) {
+      renderThreadList($('#ai-content'));
+    }
+  }, onErr('threads')));
   // ブックマーク
   state.unsubs.push(onSnapshot(query(collection(db, 'bookmarks'), orderBy('savedAt', 'desc')), snap => {
     state.bookmarks = [];
@@ -737,25 +741,183 @@ function renderChat(out) {
       </div>`;
     return;
   }
+  if (state.activeThread) {
+    renderThreadMessages(out);
+  } else {
+    renderThreadList(out);
+  }
+}
+
+function renderThreadList(out) {
+  const threads = state.threads || [];
+  let html = `
+    <button class="btn-add" id="new-thread-btn">＋ 新しい会話を始める</button>`;
+  if (!threads.length) {
+    html += `<div class="empty"><span class="empty-emoji">💬</span>まだ会話がありません<br><small>カテゴリを選んで質問を始めましょう</small></div>`;
+  } else {
+    html += `<div class="thread-list">`;
+    threads.forEach(t => {
+      const cat = THREAD_CATEGORIES.find(c => c.id === t.category) || { emoji: '💬', label: 'その他', color: '#D0D0D0' };
+      html += `
+        <div class="thread-card-wrap">
+          <button class="thread-card" data-thread="${t.id}" style="border-left-color: ${cat.color}">
+            <div class="thread-cat">${cat.emoji} ${escapeHtml(cat.label)}</div>
+            <div class="thread-title">${escapeHtml(t.title || '(無題)')}</div>
+            <div class="thread-date">${formatDateLong(t.lastMessageAt || t.createdAt)}</div>
+          </button>
+          <button class="thread-del-btn" data-del-thread="${t.id}" title="削除">🗑️</button>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+  out.innerHTML = html;
+  $('#new-thread-btn').addEventListener('click', openNewThreadModal);
+  out.querySelectorAll('[data-thread]').forEach(b => {
+    b.addEventListener('click', () => openThread(b.dataset.thread));
+  });
+  out.querySelectorAll('[data-del-thread]').forEach(b => {
+    b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm('このスレッドを削除しますか？(中の会話も全て削除されます)')) return;
+      // メッセージも全削除
+      const msgs = state.threadMessages?.[b.dataset.delThread] || [];
+      for (const m of msgs) await deleteDoc(doc(db, 'chat', m.id));
+      await deleteDoc(doc(db, 'chat_threads', b.dataset.delThread));
+    });
+  });
+}
+
+function openNewThreadModal() {
+  const buttons = THREAD_CATEGORIES.map(c => `
+    <button class="cat-select-btn" data-cat="${c.id}" style="background: linear-gradient(135deg, ${c.color}, ${c.color}cc)">
+      <span class="cat-emoji">${c.emoji}</span>
+      <span>${c.label}</span>
+    </button>`).join('');
+  showModal(`
+    <h3>カテゴリを選択</h3>
+    <p style="font-size:12px;color:var(--text-soft);margin-bottom:14px;">何について相談しますか？</p>
+    <div class="cat-select-grid">${buttons}</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" data-close>キャンセル</button>
+    </div>
+  `);
+  document.querySelectorAll('.cat-select-btn').forEach(b => {
+    b.addEventListener('click', async () => {
+      closeModal();
+      const newRef = await addDoc(collection(db, 'chat_threads'), {
+        category: b.dataset.cat,
+        title: '',
+        createdAt: serverTimestamp(),
+        lastMessageAt: serverTimestamp(),
+        createdBy: state.currentUser,
+      });
+      openThread(newRef.id);
+    });
+  });
+}
+
+function openThread(threadId) {
+  state.activeThread = threadId;
+  // メッセージ購読を開始
+  if (state.threadMessageUnsub) state.threadMessageUnsub();
+  state.threadMessages = state.threadMessages || {};
+  state.threadMessageUnsub = onSnapshot(
+    query(collection(db, 'chat'), orderBy('createdAt', 'asc')),
+    snap => {
+      const msgs = [];
+      snap.forEach(d => {
+        const data = d.data();
+        if (data.threadId === threadId) msgs.push({ id: d.id, ...data });
+      });
+      state.threadMessages[threadId] = msgs;
+      if (state.activeTab === 'ai' && state.aiSubTab === 'chat' && state.activeThread === threadId) {
+        renderThreadMessagesContent();
+      }
+    },
+    err => console.error('[thread messages]', err)
+  );
+  renderAiTab();
+}
+
+function renderThreadMessages(out) {
+  const thread = (state.threads || []).find(t => t.id === state.activeThread);
+  const cat = thread ? THREAD_CATEGORIES.find(c => c.id === thread.category) : null;
   out.innerHTML = `
+    <div class="thread-header">
+      <button class="btn-secondary" id="thread-back-btn">← 一覧</button>
+      <div class="thread-header-info">
+        ${cat ? `<span class="thread-cat-tag" style="background:${cat.color}">${cat.emoji} ${cat.label}</span>` : ''}
+        <div class="thread-header-title">${escapeHtml(thread?.title || '新しい会話')}</div>
+      </div>
+    </div>
     <div class="chat-info">
-      💡 妊娠・出産・育児について何でも聞いてください。<br>
+      💡 ${cat ? `${cat.label}について何でも聞いてください` : '質問を入力してください'}<br>
       <small>※ 医学的な判断は必ず医師・助産師に相談してください</small>
     </div>
     <div class="chat-messages" id="chat-messages"></div>
     <div class="chat-input-area">
       <textarea id="chat-input" placeholder="質問を入力…" rows="2"></textarea>
       <button id="chat-send-btn" class="btn-primary">送信</button>
-    </div>
-    <div style="text-align:right;margin-top:8px;">
-      <button class="btn-danger" id="chat-clear-btn">履歴クリア</button>
     </div>`;
-  renderChatMessages();
+  renderThreadMessagesContent();
+  $('#thread-back-btn').addEventListener('click', () => {
+    state.activeThread = null;
+    if (state.threadMessageUnsub) { state.threadMessageUnsub(); state.threadMessageUnsub = null; }
+    renderAiTab();
+  });
   $('#chat-send-btn').addEventListener('click', sendChat);
   $('#chat-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendChat();
   });
-  $('#chat-clear-btn').addEventListener('click', clearChat);
+}
+
+function renderThreadMessagesContent() {
+  const wrap = $('#chat-messages');
+  if (!wrap) return;
+  const msgs = state.threadMessages?.[state.activeThread] || [];
+  if (!msgs.length) {
+    wrap.innerHTML = `<div class="chat-empty">最初の質問を入力してみてください</div>`;
+    return;
+  }
+  wrap.innerHTML = msgs.map((m, idx) => {
+    const text = renderSimpleMarkdown(m.content);
+    const isAssistant = m.role === 'assistant';
+    const isStreaming = m.id === '__streaming__';
+    return `
+      <div class="chat-msg chat-msg-${m.role}">
+        <div class="chat-msg-wrap">
+          <div class="chat-msg-bubble">${text}</div>
+          ${isAssistant && !isStreaming ? `
+            <div class="chat-msg-actions">
+              <button class="chat-bookmark-btn" data-idx="${idx}" title="この回答を保存">📌 保存</button>
+            </div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  wrap.scrollTop = wrap.scrollHeight;
+  wrap.querySelectorAll('.chat-bookmark-btn').forEach(b => {
+    b.addEventListener('click', () => bookmarkAnswerInThread(parseInt(b.dataset.idx, 10)));
+  });
+}
+
+async function bookmarkAnswerInThread(idx) {
+  const msgs = state.threadMessages?.[state.activeThread] || [];
+  const ans = msgs[idx];
+  if (!ans || ans.role !== 'assistant') return;
+  let q = '';
+  for (let i = idx - 1; i >= 0; i--) {
+    if (msgs[i].role === 'user') { q = msgs[i].content; break; }
+  }
+  const thread = (state.threads || []).find(t => t.id === state.activeThread);
+  const cat = thread ? THREAD_CATEGORIES.find(c => c.id === thread.category) : null;
+  await addDoc(collection(db, 'bookmarks'), {
+    question: q,
+    answer: ans.content,
+    tag: cat ? cat.label : '',
+    savedBy: state.currentUser,
+    savedAt: serverTimestamp(),
+  });
+  alert('📌 保存しました');
 }
 
 function renderChatMessages() {
@@ -891,6 +1053,7 @@ function renderBookmarks(out) {
 let chatBusy = false;
 async function sendChat() {
   if (chatBusy) return;
+  if (!state.activeThread) { alert('スレッドが選択されていません'); return; }
   const input = $('#chat-input');
   const text = input.value.trim();
   if (!text) return;
@@ -900,22 +1063,34 @@ async function sendChat() {
   $('#chat-send-btn').textContent = '送信中…';
   $('#chat-send-btn').disabled = true;
 
+  const threadId = state.activeThread;
+
   // ユーザーメッセージを保存
   await addDoc(collection(db, 'chat'), {
+    threadId,
     role: 'user', content: text, by: state.currentUser, createdAt: serverTimestamp(),
   });
 
-  // 直近10往復だけ送信 (コスト節約)
-  const recent = state.chatMessages.slice(-20);
+  // スレッドの初回投稿ならタイトル設定 + 最終更新
+  const thread = (state.threads || []).find(t => t.id === threadId);
+  const updates = { lastMessageAt: serverTimestamp() };
+  if (thread && !thread.title) updates.title = text.slice(0, 30);
+  await setDoc(doc(db, 'chat_threads', threadId), updates, { merge: true });
+
+  // このスレッド内の直近20メッセージだけ送信
+  const threadMsgs = state.threadMessages?.[threadId] || [];
+  const recent = threadMsgs.slice(-20);
   const apiMessages = recent.map(m => ({ role: m.role, content: m.content }));
   apiMessages.push({ role: 'user', content: text });
 
-  // 現在の状況を user メッセージの先頭に注入 (system promptはキャッシュ維持のため不変)
+  // 現在の状況をuserメッセージ先頭に注入 (system promptはキャッシュ維持のため不変)
   const { week, day } = calcWeek();
   const wkLabel = day > 0 ? `${week}週+${day}日` : `${week}週`;
   const today = new Date().toLocaleDateString('ja-JP');
+  const threadCat = thread ? THREAD_CATEGORIES.find(c => c.id === thread.category) : null;
+  const catNote = threadCat ? `カテゴリ: ${threadCat.label}` : '';
   apiMessages[apiMessages.length - 1].content =
-    `[現在: ${today} / 妊娠 ${wkLabel} / 予定日まで${daysUntilDue()}日]\n\n${text}`;
+    `[現在: ${today} / 妊娠 ${wkLabel} / 予定日まで${daysUntilDue()}日 / ${catNote}]\n\n${text}`;
 
   try {
     const Anthropic = (await import('https://esm.sh/@anthropic-ai/sdk@0.32.1')).default;
@@ -934,28 +1109,31 @@ async function sendChat() {
       messages: apiMessages,
     });
     let fullText = '';
-    // 仮メッセージ表示用
     const tempId = '__streaming__';
-    state.chatMessages.push({ id: tempId, role: 'assistant', content: '考え中…' });
-    renderChatMessages();
+    if (!state.threadMessages[threadId]) state.threadMessages[threadId] = [];
+    state.threadMessages[threadId].push({ id: tempId, role: 'assistant', content: '考え中…' });
+    renderThreadMessagesContent();
     for await (const chunk of stream) {
       if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
         fullText += chunk.delta.text;
-        const idx = state.chatMessages.findIndex(m => m.id === tempId);
-        if (idx >= 0) state.chatMessages[idx].content = fullText;
-        renderChatMessages();
+        const arr = state.threadMessages[threadId];
+        const idx = arr.findIndex(m => m.id === tempId);
+        if (idx >= 0) arr[idx].content = fullText;
+        renderThreadMessagesContent();
       }
     }
-    // 一時を取り除いて Firestore に保存 (購読でリアル更新)
-    state.chatMessages = state.chatMessages.filter(m => m.id !== tempId);
+    state.threadMessages[threadId] = state.threadMessages[threadId].filter(m => m.id !== tempId);
     await addDoc(collection(db, 'chat'), {
-      role: 'assistant', content: fullText, createdAt: serverTimestamp(),
+      threadId, role: 'assistant', content: fullText, createdAt: serverTimestamp(),
     });
+    await setDoc(doc(db, 'chat_threads', threadId), { lastMessageAt: serverTimestamp() }, { merge: true });
   } catch (e) {
     console.error('Chat error:', e);
-    state.chatMessages = state.chatMessages.filter(m => m.id !== '__streaming__');
+    if (state.threadMessages[threadId]) {
+      state.threadMessages[threadId] = state.threadMessages[threadId].filter(m => m.id !== '__streaming__');
+    }
     await addDoc(collection(db, 'chat'), {
-      role: 'assistant',
+      threadId, role: 'assistant',
       content: `❌ エラー: ${e.message || '不明'}\nAPIキーや残高を確認してください。`,
       createdAt: serverTimestamp(),
     });
@@ -966,11 +1144,29 @@ async function sendChat() {
   }
 }
 
-async function clearChat() {
-  if (!confirm('チャット履歴を全て削除しますか？')) return;
-  for (const m of state.chatMessages) {
-    if (m.id && m.id !== '__streaming__') await deleteDoc(doc(db, 'chat', m.id));
+// ===== 既存チャット移行 (threadId なしのドキュメントを「食事」スレッドへ) =====
+let migrationDone = false;
+async function migrateOldChat() {
+  if (migrationDone) return;
+  migrationDone = true;
+  const snap = await getDocs(collection(db, 'chat'));
+  const orphan = [];
+  snap.forEach(d => {
+    if (!d.data().threadId) orphan.push({ id: d.id, ...d.data() });
+  });
+  if (!orphan.length) return;
+  console.log('[migrate] moving', orphan.length, '旧チャットを「食事」スレッドへ');
+  const newRef = await addDoc(collection(db, 'chat_threads'), {
+    category: 'food',
+    title: '食事に関する質問 (移行)',
+    createdAt: serverTimestamp(),
+    lastMessageAt: serverTimestamp(),
+    createdBy: state.currentUser,
+  });
+  for (const m of orphan) {
+    await setDoc(doc(db, 'chat', m.id), { threadId: newRef.id }, { merge: true });
   }
+  alert(`旧チャット ${orphan.length} 件を「食事」スレッドに移行しました`);
 }
 
 function renderAiSettings(out) {
